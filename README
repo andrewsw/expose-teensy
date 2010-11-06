@@ -1,0 +1,7 @@
+This is a class project for cs572, Fall 2010 at Portland State University.
+
+The objective is to develop a general purpose driver for the teensy micro-controller
+that exposes a series of abstract character devices in userland. These devices
+will control various aspects of the teensy for a variety of purposes. The idea is
+that a simple set of ioctls, along with reads and writes can provide general purpose
+functionality without fiddly access to the teensy directly.
