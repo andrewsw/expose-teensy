@@ -1,23 +1,24 @@
-obj-m += usb_driver/teensy.o
+#
+# general project wide makefile
+#
 
-ifneq "$(shell uname -r | cut -d'-' -f1)" "2.6.24"
-KERNEL_ENV=$(HOME)/src/linux-2.6.24/
-else
-KERNEL_ENV=/lib/modules/$(shell uname -r)/build
-endif
+TRGTS = DRIVER
+SYNTAX_TRGTS = DRIVER
+TEST_TRGTS = 
 
-all: 
-	make -C $(KERNEL_ENV) M=$(PWD) modules
+all: CMD = all
+all: $(TRGTS) 
 
+clean: CMD = clean
+clean: $(TRGTS)
 
-clean:
-	make -C $(KERNEL_ENV) M=$(PWD) clean
+check-syntax: CMD = check-syntax
+check-syntax: $(SYNTAX_TRGTS)
 
+test: CMD = test
+test: $(TEST_TRGTS)
 
-check-syntax: 
-	make -C $(KERNEL_ENV) M=$(PWD) modules
+DRIVER:
+	cd ./usb_driver; $(MAKE) $(CMD)
 
-
-test: 
-	# put in test code here...
 
