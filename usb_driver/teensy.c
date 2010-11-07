@@ -7,6 +7,22 @@
 #endif
 
 
+static int probe_teensy (struct usb_interface *intf,
+			 const struct usb_device_id *id) 
+{
+	DPRINT("connect detected\n");
+
+	return 0;
+  
+}
+
+static void disconnect_teensy(struct usb_interface *intf) 
+{
+
+	DPRINT("disconnect detected\n");
+
+}
+
 
 /*
  *
@@ -18,10 +34,15 @@
 int __init
 teensy_init(void)
 {
-								
-	printk(KERN_INFO "teensy: initialized\n");
+	int result;
 	
-	return 0;
+	DPRINT("initializing...\n");
+
+	result = usb_register (&teensy_driver);
+		
+	DPRINT("initialized.\n");
+	
+	return result;
 }
 
 
@@ -35,11 +56,11 @@ teensy_init(void)
 void __exit
 teensy_exit(void)
 {
-	printk (KERN_INFO "teensy: Removing teenst\n");
+	DPRINT("teensy: Removing teensy\n");
 
-	printk (KERN_INFO "teensy: removal complete.\n");
+	usb_deregister(&teensy_driver);
 	
-	return;
+	DPRINT("removal complete.\n");
 	
 }
 
