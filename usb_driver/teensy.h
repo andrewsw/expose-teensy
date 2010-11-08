@@ -50,4 +50,13 @@ static struct usb_driver teensy_driver = {
 	.id_table =     teensy_table
 };
 
+struct usb_teensy {
+	struct usb_device *udev;          /* the usb device for this device */
+	struct usb_interface *interface;  /* the interface for this device */
+	unsigned char *in_buf;            /* the buffer for receiving data */
+	size_t in_size;                   /* the size of the buffer */
+	__u8 in_endpoint;                 /* the device endpoint for incoming packets */
+	__u8 out_endpoint;                /* the device endpoint for outgoing packets */
+};
+	
 #endif /* TEENSY_H */
