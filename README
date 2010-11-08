@@ -5,3 +5,24 @@ that exposes a series of abstract character devices in userland. These devices
 will control various aspects of the teensy for a variety of purposes. The idea is
 that a simple set of ioctls, along with reads and writes can provide general purpose
 functionality without fiddly access to the teensy directly.
+
+Architecture Ideas:
+
+Here are some architecture ideas for people to think about:
+
+1. IN Data -- data coming from the device to the host machine -- this data could
+be coming in regularly and driven by the teensy itself. Using the perrenial example of an 
+ADC device, if someone opens an ADC device (like /dev/adc0) then they will theoretically 
+begin reading at some point. So we should have the teensy begin sending packets with samples.
+These samples will come through an URB which will trigger a call back function when
+completed. That callback function will have to run in interrupt mode, grab the buffer of data
+and do something sane with it while setting up the URB and resubmitting it. That would look
+something like this psuedo-code:
+	  a. check for error conditions
+	  b. peek at the descriptor bytes of the data buffer
+	  c. get the appropriate lock based on where the data is going
+	  d. copy the data into the destination buffer
+	  e. release the lock
+	  f. wakeup an appropriate sleeper to handle the data
+	  g. resubmit the URB and get out of the way.
+
