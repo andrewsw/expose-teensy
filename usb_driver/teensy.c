@@ -62,9 +62,11 @@ static int probe_teensy (struct usb_interface *intf,
 					
 		}
 
+		
+
 		/* check for an out endpoint, if not already found */
 		if (!dev->out_endpoint &&
-		    (endpoint->bEndpointAddress & USB_DIR_OUT) &&
+		    !(endpoint->bEndpointAddress & USB_DIR_IN) &&
 		    ((endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK)
 		     == USB_ENDPOINT_XFER_INT)) {
 
