@@ -90,6 +90,8 @@ static int probe_teensy (struct usb_interface *intf,
 		return -ENOMEM;
 	}
 
+	DPRINT ("successful probe.\n");
+	
 	/* save the data pointer in the interface */
 	usb_set_intfdata (intf, dev);
 
@@ -122,9 +124,9 @@ static void disconnect_teensy(struct usb_interface *intf)
 
 	dev = (struct usb_teensy *)usb_get_intfdata(intf);
 		
-	if(!dev) {
+	if(dev) {
 
-		if(!dev->in_buf) {
+		if(dev->in_buf) {
 			kfree(dev->in_buf);
 		}
 
