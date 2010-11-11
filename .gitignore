@@ -5,3 +5,11 @@
 *.ko
 Module.symvers
 .tmp_versions
+*lst
+*eep
+*hex
+*lss
+*map
+*sym
+*elf
+.dep
