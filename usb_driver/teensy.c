@@ -34,6 +34,9 @@ static int probe_teensy (struct usb_interface *intf,
 	iface_desc = intf->cur_altsetting;
 	for (i = 0; i < iface_desc->desc.bNumEndpoints; ++i) {
 
+		DPRINT ("-- probing endpoint %d\n", i);
+		
+
 		/* store the current endpoint */
 		endpoint = &iface_desc->endpoint[i].desc;
 
@@ -43,6 +46,8 @@ static int probe_teensy (struct usb_interface *intf,
 		    ((endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK)
 		     == USB_ENDPOINT_XFER_INT)) {
 
+			DPRINT ("-- detected IN endpoint\n");
+			
 			/* this is an input of interrupt type */
 			/* connect it up... */ 
 			dev->in_endpoint = endpoint->bEndpointAddress;
@@ -63,6 +68,8 @@ static int probe_teensy (struct usb_interface *intf,
 		    ((endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK)
 		     == USB_ENDPOINT_XFER_INT)) {
 
+			DPRINT("-- detected OUT endpoint\n");
+			
 			/* this is an output endpoint */
 			dev->out_endpoint = endpoint->bEndpointAddress;
 
