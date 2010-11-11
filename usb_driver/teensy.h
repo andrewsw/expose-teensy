@@ -9,13 +9,13 @@
 #define TEENSY_DEBUG 
 
 #define VENDOR_ID        0x16C0
-#define PRODUCT_ID        0x0480
+#define PRODUCT_ID        0x0FFF
 
 /* a debug printk */
 #ifdef TEENSY_DEBUG
-#define DPRINT(msg)  printk(KERN_DEBUG "teensy: " msg)
+#define DPRINT(msg...)  printk(KERN_DEBUG "teensy: " msg)
 #else
-#define DPRINT(msg)
+#define DPRINT(msg...)
 #endif
 
 MODULE_AUTHOR("Andrew Sackville-West"); 
