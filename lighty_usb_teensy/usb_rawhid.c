@@ -128,7 +128,8 @@ static uint8_t PROGMEM rawhid_hid_report_desc[] = {
 };
 
 
-#define CONFIG1_DESC_SIZE        (9+9+9+7+7)
+//#define CONFIG1_DESC_SIZE        (9+9+9+7+7)
+#define CONFIG1_DESC_SIZE (9+9+7+7)
 #define RAWHID_HID_DESC_OFFSET   (9+9)
 static uint8_t PROGMEM config1_descriptor[CONFIG1_DESC_SIZE] = {
 	// configuration descriptor, USB spec 9.6.3, page 264-266, Table 9-10
@@ -153,14 +154,14 @@ static uint8_t PROGMEM config1_descriptor[CONFIG1_DESC_SIZE] = {
 	0x00,					// bInterfaceProtocol (0x01 = Keyboard)
 	0,					// iInterface
 	// HID interface descriptor, HID 1.11 spec, section 6.2.1
-	9,					// bLength
-	0x21,					// bDescriptorType
-	0x11, 0x01,				// bcdHID
-	0,					// bCountryCode
-	1,					// bNumDescriptors
-	0x22,					// bDescriptorType
-	sizeof(rawhid_hid_report_desc),		// wDescriptorLength
-	0,
+	//	9,					// bLength
+	//0x21,					// bDescriptorType
+	//0x11, 0x01,				// bcdHID
+	//0,					// bCountryCode
+	//1,					// bNumDescriptors
+	//0x22,					// bDescriptorType
+	//sizeof(rawhid_hid_report_desc),		// wDescriptorLength
+	//0,
 	// endpoint descriptor, USB spec 9.6.6, page 269-271, Table 9-13
 	7,					// bLength
 	5,					// bDescriptorType
@@ -211,8 +212,8 @@ static struct descriptor_list_struct {
 } PROGMEM descriptor_list[] = {
 	{0x0100, 0x0000, device_descriptor, sizeof(device_descriptor)},
 	{0x0200, 0x0000, config1_descriptor, sizeof(config1_descriptor)},
-	{0x2200, RAWHID_INTERFACE, rawhid_hid_report_desc, sizeof(rawhid_hid_report_desc)},
-	{0x2100, RAWHID_INTERFACE, config1_descriptor+RAWHID_HID_DESC_OFFSET, 9},
+	//	{0x2200, RAWHID_INTERFACE, rawhid_hid_report_desc, sizeof(rawhid_hid_report_desc)},
+	//	{0x2100, RAWHID_INTERFACE, config1_descriptor+RAWHID_HID_DESC_OFFSET, 9},
 	{0x0300, 0x0000, (const uint8_t *)&string0, 4},
 	{0x0301, 0x0409, (const uint8_t *)&string1, sizeof(STR_MANUFACTURER)},
 	{0x0302, 0x0409, (const uint8_t *)&string2, sizeof(STR_PRODUCT)}
