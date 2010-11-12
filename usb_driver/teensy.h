@@ -57,6 +57,10 @@ struct usb_teensy {
 	size_t in_size;                   /* the size of the buffer */
 	__u8 in_endpoint;                 /* the device endpoint for incoming packets */
 	__u8 out_endpoint;                /* the device endpoint for outgoing packets */
+	struct urb *in_urb;               /* our input urb */
+	int in_interval;                  /* the polling interval of the input endpoint */
+	
+	
 };
 	
 #endif /* TEENSY_H */

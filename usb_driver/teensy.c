@@ -7,6 +7,77 @@
 #endif
 
 
+
+/*
+ * teensy_interrupt_in_callback
+ *
+ * callback function to handle data coming on from teensy
+ *
+ * note, this runs in interrupt context, play nice!
+ *
+ */
+static void teensy_interrupt_in_callback (struct urb *urb) 
+{
+	struct usb_teensy *dev = urb->context;
+	int status = urb->status;
+
+	DPRINT("interrupt_in callback called\n");
+
+	if (status != 0){
+		if ((status != -ENOENT) && (status != -ECONNRESET) &&
+		    (status != -ESHUTDOWN)) {
+			printk(KERN_ERR "teensy: input callback nonzero status received: %d\n", status);
+		}
+	}
+
+	if (urb->actual_length > 0) {
+		DPRINT("data received: %x", dev->in_buf[0]);
+	}
+
+	usb_submit_urb(urb, GFP_ATOMIC);
+
+	DPRINT ("in URB RE-submitted\n");
+	
+}
+
+
+/*
+ * init_reader
+ *
+ * this function sets up the reader URB and submits it
+ * this enables interrupt driven reading of any packets from teensy
+ *
+ * struct usb_interface *intf  -- the interface to read from
+ *
+ */
+void init_reader (struct usb_interface *intf) 
+{
+
+	struct usb_teensy *dev = usb_get_intfdata(intf);
+
+	dev->in_urb = usb_alloc_urb(0, GFP_KERNEL);
+
+	
+
+	usb_fill_int_urb (dev->in_urb,
+			  dev->udev,
+			  usb_rcvintpipe(dev->udev,
+					 dev->in_endpoint),
+			  dev->in_buf,
+			  dev->in_endpoint,
+			  teensy_interrupt_in_callback, dev,
+			  dev->in_interval);
+
+	usb_submit_urb(dev->in_urb, GFP_KERNEL);
+
+	DPRINT("in URB submitted\n");
+	
+	
+}
+
+	
+
+
 static int probe_teensy (struct usb_interface *intf,
 			 const struct usb_device_id *id) 
 {
@@ -52,6 +123,7 @@ static int probe_teensy (struct usb_interface *intf,
 			/* connect it up... */ 
 			dev->in_endpoint = endpoint->bEndpointAddress;
 			dev->in_size = endpoint->wMaxPacketSize;
+			dev->in_interval = endpoint->bInterval;
 			dev->in_buf = kmalloc(dev->in_size, GFP_KERNEL);
 
 			if (!dev->in_buf) {
@@ -111,6 +183,9 @@ static int probe_teensy (struct usb_interface *intf,
 	 * sleeping handler to handle that data
 	 * 
 	 */
+
+	init_reader(intf);
+	
 
 	return 0;
   
