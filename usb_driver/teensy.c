@@ -37,8 +37,8 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 	if (urb->actual_length > 0) {
 		DPRINT("actual_length: %d\n", urb->actual_length);
 		
-		for (i=0; i < urb->actual_length;i++)
-			data[i]=dev->in_buf[i];
+		for (i=0; i < urb->actual_length - 3;i+=4)
+			sprintf(&data[i], "%x %x %x %x\n", dev->in_buf[i], dev->in_buf[i+1], dev->in_buf[i+2],dev->in_buf[i+3]);
 		
 		data[64]=0x00;
 		DPRINT("data: %s\n", data);		
