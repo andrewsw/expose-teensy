@@ -66,7 +66,7 @@ void init_reader (struct usb_interface *intf)
 			  usb_rcvintpipe(dev->udev,
 					 dev->in_endpoint),
 			  dev->in_buf,
-			  dev->in_endpoint,
+			  dev->in_size,
 			  teensy_interrupt_in_callback, dev,
 			  dev->in_interval);
 
