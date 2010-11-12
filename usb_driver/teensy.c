@@ -21,6 +21,8 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 	struct usb_teensy *dev = urb->context;
 	int status = urb->status;
 	int i;
+	char data[65];
+	
 
 	DPRINT("interrupt_in callback called\n");
 
@@ -34,10 +36,12 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 
 	if (urb->actual_length > 0) {
 		DPRINT("actual_length: %d\n", urb->actual_length);
-		DPRINT("data:\n");
 		
 		for (i=0; i < urb->actual_length;i++)
-			DPRINT("%x", dev->in_buf[i]);
+			data[i]=dev->in_buf[i];
+		
+		data[64]=0x00;
+		DPRINT("data: %s\n", data);		
 			
 	}
 
