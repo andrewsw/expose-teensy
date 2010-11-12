@@ -54,6 +54,8 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 
 		/* release the lock!!! */
 
+		/* memcpy the data... */
+
 		/* set read_request to completed */
 
 		/* wakeup the readers wait_queue */
