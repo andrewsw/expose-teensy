@@ -20,6 +20,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 {
 	struct usb_teensy *dev = urb->context;
 	int status = urb->status;
+	int i;
 
 	DPRINT("interrupt_in callback called\n");
 
@@ -27,13 +28,17 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		if ((status != -ENOENT) && (status != -ECONNRESET) &&
 		    (status != -ESHUTDOWN)) {
 			printk(KERN_ERR "teensy: input callback nonzero status received: %d\n", status);
-			DPRINT("actual_length: %d\n", urb->actual_length);
 			
 		}
 	}
 
 	if (urb->actual_length > 0) {
-		DPRINT("data received: %x\n", dev->in_buf[0]);
+		DPRINT("actual_length: %d\n", urb->actual_length);
+		DPRINT("data:\n");
+		
+		for (i=0; i < urb->actual_length;i++)
+			DPRINT("%x", dev->in_buf[i]);
+			
 	}
 
 	usb_submit_urb(urb, GFP_ATOMIC);
