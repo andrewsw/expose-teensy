@@ -44,7 +44,19 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 			DPRINT("data: %s\n", data);
 		}
 		
-		
+		/* examine the first byte */
+
+		/* lock the list!!! */
+		/* search readers list for match, if no match, just
+		 * drop the packet, snoozers are loozers */
+
+		/* remove from list */
+
+		/* release the lock!!! */
+
+		/* set read_request to completed */
+
+		/* wakeup the readers wait_queue */
 
 			
 	}
@@ -87,6 +99,41 @@ void init_reader (struct usb_interface *intf)
 	
 	
 }
+
+/*
+ * teensy_read
+ *
+ * this function takes a read_request from a client, and cues it on
+ * the readers_list for servicing by the reader callback routine
+ *
+ * a submission here will block, but waking is probably
+ * non-deterministic. If there are multiple reads queued for the same
+ * teensy device, it is very possible that they will be serviced out
+ * of order.
+ */
+int teensy_read(struct read_request *req) 
+{
+
+	/* check the request for validity (no nullptrs etc) */
+	/* set request completed to FALSE */
+
+	/* LOCK the LIST!! */
+	/* put the request on the tail of the list */
+
+	/* UNLOCK THE LIST!! */
+	
+	/* put ourself on the readers wait_queue */
+
+	/* send packet to teensy */
+
+	/* wait_event completed == TRUE */
+
+	/* back from blocked read, check out what we got... */
+	
+	return 0;
+		
+}
+
 
 	
 

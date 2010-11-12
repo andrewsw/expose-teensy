@@ -62,5 +62,22 @@ struct usb_teensy {
 	
 	
 };
+
+struct read_request {
+
+	struct list_head list; /* we're a linked list */
+	char t_dev;            /* teensy device */
+	char *buf;             /* buffer to store the read data in */
+	size_t size;           /* the size of the request */
+	bool complete;         /* the status of the request */
 	
+};
+
+
+/*
+ * module-wide data structures
+ *
+ */
+static LIST_HEAD(readers_list);
+
 #endif /* TEENSY_H */
