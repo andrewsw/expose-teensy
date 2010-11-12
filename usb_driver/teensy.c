@@ -59,8 +59,6 @@ void init_reader (struct usb_interface *intf)
 
 	dev->in_urb = usb_alloc_urb(0, GFP_KERNEL);
 
-	
-
 	usb_fill_int_urb (dev->in_urb,
 			  dev->udev,
 			  usb_rcvintpipe(dev->udev,
@@ -209,6 +207,12 @@ static void disconnect_teensy(struct usb_interface *intf)
 		
 	if(dev) {
 
+		/* kill our URB synchronously... kill it DEAD */
+		if(dev->in_urb) {
+			usb_kill_urb(dev->in_urb);
+			usb_free_urb(dev->in_urb);
+		}
+		
 		if(dev->in_buf) {
 			kfree(dev->in_buf);
 		}
