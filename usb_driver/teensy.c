@@ -27,11 +27,13 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		if ((status != -ENOENT) && (status != -ECONNRESET) &&
 		    (status != -ESHUTDOWN)) {
 			printk(KERN_ERR "teensy: input callback nonzero status received: %d\n", status);
+			DPRINT("actual_length: %d\n", urb->actual_length);
+			
 		}
 	}
 
 	if (urb->actual_length > 0) {
-		DPRINT("data received: %x", dev->in_buf[0]);
+		DPRINT("data received: %x\n", dev->in_buf[0]);
 	}
 
 	usb_submit_urb(urb, GFP_ATOMIC);
@@ -125,6 +127,12 @@ static int probe_teensy (struct usb_interface *intf,
 			dev->in_size = endpoint->wMaxPacketSize;
 			dev->in_interval = endpoint->bInterval;
 			dev->in_buf = kmalloc(dev->in_size, GFP_KERNEL);
+
+			DPRINT("--IN endpoint: %d, size: %d, interval: %d\n",
+			       dev->in_endpoint,
+			       dev->in_size,
+			       dev->in_interval);
+			
 
 			if (!dev->in_buf) {
 				kfree(dev);
