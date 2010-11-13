@@ -2,11 +2,13 @@
 
 obj-m += teensy.o
 
-#ifneq "$(shell uname -r | cut -d'-' -f1)" "2.6.24"
-#KERNEL_ENV=$(HOME)/src/linux-2.6.24/
-#else
+# if kernel version is not 2.6.24 then assume 2.6.24 kernel source is
+# in /root
+ifneq "$(shell uname -r | grep -o '^2\.6\.24')" "2.6.24"
+KERNEL_ENV=$(HOME)/src/linux-2.6.24/
+else
 KERNEL_ENV=/lib/modules/$(shell uname -r)/build
-#endif
+endif
 
 all: 
 	make -C $(KERNEL_ENV) M=$(PWD) modules
