@@ -10,7 +10,6 @@
 *o.cmd
 *sym
 *~
-*.swp
 .dep
 .tmp_versions
 /git-daemon-export-ok
