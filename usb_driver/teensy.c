@@ -226,16 +226,16 @@ int teensy_read(struct read_request *req)
 	DPRINT ("got reader lock\n");
 	
 	/* put the request on the tail of the list */
-	/* list_add_tail(&req->list, &readers_list); */
+	list_add_tail(&req->list, &readers_list); 
 
-	/* DPRINT ("added read request to list, list looks like:\n"); */
+	DPRINT ("added read request to list, list looks like:\n");
 
-	/* list_for_each(curr, &readers_list) { */
+	list_for_each(curr, &readers_list) {
 		
-	/* 	temp = list_entry(temp, struct read_request, list); */
-	/* 	DPRINT("entry device: %x", temp->t_dev); */
+		temp = list_entry(temp, struct read_request, list);
+		DPRINT("entry device: %x", temp->t_dev);
 		
-	/* } */
+	}
 	
 	
 	/* UNLOCK THE LIST!! */
@@ -252,7 +252,7 @@ int teensy_read(struct read_request *req)
 
 	DPRINT ("faking data...\n");
 	req->buf[0]='a';
-	req->buf[1]='\0';
+	req->buf[1]='a';
 	req->size=2;
 	
 	/* back from blocked read, check out what we got... */
