@@ -88,8 +88,8 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		}
 		
 		/* examine the first byte */
-		packet_id = dev->in_buf[0];
-		DPRINT("packet_id: %X\n", packet_id);
+		packet_id = dev->in_buf[0] & 0xff;
+		DPRINT("packet_id: %x\n", packet_id);
 		
 		
 		/* lock the list!!! */
@@ -131,8 +131,8 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 			DPRINT ("copying buffer....\n");
 			
 			/* memcpy the data... */
-			memcpy(req->buf, dev->in_buf,
-			       urb->actual_length <= req->size ? urb->actual_length : req->size);
+			/* memcpy(req->buf, dev->in_buf, */
+			/*        urb->actual_length <= req->size ? urb->actual_length : req->size); */
 			
 			/* set read_request to completed */
 			req->complete = true;
@@ -200,7 +200,7 @@ void init_reader (struct usb_interface *intf)
  */
 int teensy_read(struct read_request *req)
 {
-	int i;
+
 	struct read_request* temp;
 	struct list_head *curr;
 	
@@ -220,11 +220,6 @@ int teensy_read(struct read_request *req)
 	DPRINT ("got reader lock\n");
 
 	
-	for (i=0;i<req->size;i++)
-		req->buf[i]='a';
-
-	req->buf[req->size]= '\0';
-	
 	/* put the request on the tail of the list */
 	list_add_tail(&req->list, &readers_list);
 
@@ -233,7 +228,7 @@ int teensy_read(struct read_request *req)
 	list_for_each(curr, &readers_list) {
 		
 		temp = list_entry(temp, struct read_request, list);
-		DPRINT("entry device: %X", temp->t_dev);
+		DPRINT("entry device: %x", temp->t_dev);
 		
 	}
 	
@@ -247,11 +242,14 @@ int teensy_read(struct read_request *req)
 	/* TODO -- right now teensy just sends data, need to implement
 	 * a protocol for requesting the right kind of data */
 	
-	return req->size;
-
 	/* wait_event completed == TRUE */
-	wait_event(readers_queue, (req->complete));
+//	wait_event(readers_queue, (req->complete));
 
+	DPRINT ("faking data...\n");
+	req->buf[0]='a';
+	req->buf[1]='\0';
+	req->size=2;
+	
 	/* back from blocked read, check out what we got... */
 	DPRINT("back from blocked read, data: %s\n", req->buf);
 	
