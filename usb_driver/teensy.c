@@ -93,11 +93,15 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		 * drop the packet, snoozers are loozers */
 		list_for_each(curr, &readers_list){
 			struct read_request *temp = list_entry(curr, struct read_request, list);
-			DPRINT("checking req, id: %X\n",temp->buf[0]);
+			if (temp) {
+				
+				DPRINT("checking req, id: %X\n",temp->buf[0]);
 			
-			if (temp->buf[0] == packet_id){
-				req = temp;
-				break;
+				if (temp->buf[0] == packet_id){
+					req = temp;
+					break;
+				}
+				
 			}
 			
 		}
@@ -186,6 +190,10 @@ void init_reader (struct usb_interface *intf)
 int teensy_read(struct read_request *req)
 {
 	int i;
+	struct read_request* temp;
+	struct list_head *curr;
+	
+	
 	
 	DPRINT("teensy_read()\n");
 	/* check the request for validity (no nullptrs etc) */
@@ -209,18 +217,26 @@ int teensy_read(struct read_request *req)
 	/* put the request on the tail of the list */
 	list_add_tail(&req->list, &readers_list);
 
-	DPRINT ("added read request to list\n");
+	DPRINT ("added read request to list, list looks like:\n");
+
+	list_for_each(curr, &readers_list) {
+		
+		temp = list_entry(temp, struct read_request, list);
+		DPRINT("entry: %X", temp->buf[0]);
+		
+	}
+	
 	
 	/* UNLOCK THE LIST!! */
 	spin_unlock(&readers_lock);
 	
-	return req->size;
-
 	DPRINT ("released reader lock, sleeping\n");
 	
 	/* send packet to teensy */
 	/* TODO -- right now teensy just sends data, need to implement
 	 * a protocol for requesting the right kind of data */
+	
+	return req->size;
 
 	/* wait_event completed == TRUE */
 	wait_event(readers_queue, (req->complete));
@@ -229,7 +245,6 @@ int teensy_read(struct read_request *req)
 	DPRINT("back from blocked read, data: %s\n", req->buf);
 	
 	return req->size;
-		
 }
 
 
