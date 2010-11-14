@@ -124,31 +124,31 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		}
 		
 
-		if (req && req->buf) {
+		/* if (req && req->buf) { */
 
-			DPRINT ("got matching read request from list\n");
-			DPRINT ("size: %d, data: %s\n", req->size, req->buf);
+		/* 	DPRINT ("got matching read request from list\n"); */
+		/* 	DPRINT ("size: %d, data: %s\n", req->size, req->buf); */
 			
-			/* remove from list */
-			list_del(&req->list);
+		/* 	/\* remove from list *\/ */
+		/* 	list_del(&req->list); */
 			
-			DPRINT ("copying buffer....\n");
+		/* 	DPRINT ("copying buffer....\n"); */
 			
-			/* memcpy the data... */
-			/* memcpy(req->buf, dev->in_buf, */
-			/*        urb->actual_length <= req->size ? urb->actual_length : req->size); */
+		/* 	/\* memcpy the data... *\/ */
+		/* 	/\* memcpy(req->buf, dev->in_buf, *\/ */
+		/* 	/\*        urb->actual_length <= req->size ? urb->actual_length : req->size); *\/ */
 			
-			/* set read_request to completed */
-			req->complete = true;
+		/* 	/\* set read_request to completed *\/ */
+		/* 	req->complete = true; */
 
-			DPRINT("waking readers\n");
+		/* 	DPRINT("waking readers\n"); */
 			
-			/* wakeup the readers wait_queue */
-			//wake_up(&readers_queue);
+		/* 	/\* wakeup the readers wait_queue *\/ */
+		/* 	//wake_up(&readers_queue); */
 
-			goto reset;
+		/* 	goto reset; */
 			
-		}
+		/* } */
 
 	}
 reset:
@@ -215,26 +215,27 @@ int teensy_read(struct read_request *req)
 	/* set request completed to FALSE */
 
 	if (!req) return -EINVAL;
-	
+
+	DPRINT("req size: %d, t_dev: %x, buffer add: %p\n", req->size, req->t_dev, req->buf);
+		
 	req->complete = false;
 	
 	/* LOCK the LIST!! */
 	spin_lock(&readers_lock);
 
 	DPRINT ("got reader lock\n");
-
 	
 	/* put the request on the tail of the list */
-	list_add_tail(&req->list, &readers_list);
+	/* list_add_tail(&req->list, &readers_list); */
 
-	DPRINT ("added read request to list, list looks like:\n");
+	/* DPRINT ("added read request to list, list looks like:\n"); */
 
-	list_for_each(curr, &readers_list) {
+	/* list_for_each(curr, &readers_list) { */
 		
-		temp = list_entry(temp, struct read_request, list);
-		DPRINT("entry device: %x", temp->t_dev);
+	/* 	temp = list_entry(temp, struct read_request, list); */
+	/* 	DPRINT("entry device: %x", temp->t_dev); */
 		
-	}
+	/* } */
 	
 	
 	/* UNLOCK THE LIST!! */
