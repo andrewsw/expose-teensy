@@ -51,8 +51,8 @@ wait_queue_head_t readers_queue;
  */
 static void teensy_interrupt_in_callback (struct urb *urb) 
 {
-	struct usb_teensy *dev = urb->context;
-	int status = urb->status;
+	struct usb_teensy *dev;
+	int status;
 	int i;
 	char data[65];
 	struct list_head *curr;
@@ -61,6 +61,12 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 				
 	DPRINT("interrupt_in callback called\n");
 
+	if (!urb)
+		goto reset;
+	
+	dev = urb->context;
+	status = urb->status;
+	
 	if (status != 0){
 		if ((status != -ENOENT) && (status != -ECONNRESET) &&
 		    (status != -ESHUTDOWN)) {
@@ -69,7 +75,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		}
 	}
 
-	if (urb->actual_length > 0) {
+	if (urb->actual_length > 0 && dev->in_buf) {
 		DPRINT("actual_length: %d\n", urb->actual_length);
 		
 		for (i=0; i < urb->actual_length - 3;i+=4) {
@@ -91,22 +97,23 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		
 		/* search readers list for match, if no match, just
 		 * drop the packet, snoozers are loozers */
-		list_for_each(curr, &readers_list){
-			struct read_request *temp = list_entry(curr, struct read_request, list);
-			if (temp) {
-				
-				DPRINT("checking req, id: %X\n",temp->buf[0]);
-			
-				if (temp->buf[0] == packet_id){
-					req = temp;
-					break;
-				}
-				
-			}
-			
-		}
+		if (!list_empty(&readers_list) )
+		    list_for_each(curr, &readers_list){
+			    struct read_request *temp = list_entry(curr, struct read_request, list);
+			    if (temp) {
+				    
+				    DPRINT("checking req, id: %X\n",temp->buf[0]);
+				    
+				    if (temp->buf[0] == packet_id){
+					    req = temp;
+					    break;
+				    }
+				    
+			    }
+			    
+		    }
 
-		if (req) {
+		if (req && req->buf) {
 
 			DPRINT ("got matching read request from list\n");
 			DPRINT ("size: %d, data: %s\n", req->size, req->buf);
@@ -222,7 +229,7 @@ int teensy_read(struct read_request *req)
 	list_for_each(curr, &readers_list) {
 		
 		temp = list_entry(temp, struct read_request, list);
-		DPRINT("entry: %X", temp->buf[0]);
+		DPRINT("entry device: %X", temp->t_dev);
 		
 	}
 	
