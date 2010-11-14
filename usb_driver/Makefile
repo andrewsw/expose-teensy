@@ -1,6 +1,8 @@
 # usb_driver module specific makefile
 
-obj-m += teensy.o
+obj-m += teensy_mono.o
+# http://linux.die.net/lkmpg/x351.html
+teensy_mono-objs := teensy.o teensy_adc.o
 
 # if kernel version is not 2.6.24 then assume 2.6.24 kernel source is
 # in /root

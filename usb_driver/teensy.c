@@ -2,11 +2,8 @@
  * teensy.c
  * 
  */
-#ifndef TEENSY_H
 #include "teensy.h"
-#endif
-
-
+#include "teensy_adc.h"
 
 /*
  * teensy_interrupt_in_callback
@@ -301,14 +298,19 @@ teensy_init(void)
 	
 	DPRINT("initializing...\n");
 
+    /* generic init */
 	result = usb_register (&teensy_driver);
-
 	if (result) {
 		printk(KERN_ERR "teensy: failed to register usb device! error code: %d", result);
 	} else {		
 		DPRINT("initialized.\n");
 	}
-		
+
+    /* sub-module-specific init */
+	result = adc_init();
+    if (result)
+      printk(KERN_ERR "teensy: failed to load adc");
+
 	return result;
 }
 
@@ -324,11 +326,14 @@ void __exit
 teensy_exit(void)
 {
 	DPRINT("teensy: Removing teensy\n");
+    
+    /* sub-module-specific cleanup */
+    adc_exit();
 
+    /* generic cleanup */
 	usb_deregister(&teensy_driver);
 	
 	DPRINT("removal complete.\n");
-	
 }
 
 module_init(teensy_init);
