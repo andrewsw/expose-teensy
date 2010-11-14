@@ -94,25 +94,29 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		
 		/* lock the list!!! */
 		spin_lock(&readers_lock);
+
+		DPRINT ("locked the readers lock\n");
+		
 		
 		/* search readers list for match, if no match, just
 		 * drop the packet, snoozers are loozers */
 		if (!list_empty(&readers_list)) {
+			DPRINT("readers list not empty, traversing\n");
 			
-		    list_for_each(curr, &readers_list){
-			    struct read_request *temp = list_entry(curr, struct read_request, list);
-			    if (temp) {
-				    
-				    DPRINT("checking req, id: %X\n",temp->buf[0]);
-				    
-				    if (temp->buf[0] == packet_id){
-					    req = temp;
-					    break;
-				    }
-				    
-			    }
-			    
-		    }
+			list_for_each(curr, &readers_list){
+				struct read_request *temp = list_entry(curr, struct read_request, list);
+				if (temp) {
+					
+					DPRINT("checking req, id: %X\n",temp->buf[0]);
+					
+					if (temp->buf[0] == packet_id){
+						req = temp;
+						break;
+					}
+					
+				}
+				
+			}
 		} else {
 			DPRINT("no readers! Dropping packet!\n");
 			goto reset;
@@ -140,7 +144,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 			DPRINT("waking readers\n");
 			
 			/* wakeup the readers wait_queue */
-			wake_up(&readers_queue);
+			//wake_up(&readers_queue);
 
 			goto reset;
 			
