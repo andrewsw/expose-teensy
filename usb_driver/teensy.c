@@ -128,9 +128,6 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 			/* remove from list */
 			list_del(&req->list);
 			
-			/* release the lock!!! */
-			spin_unlock(&readers_lock);
-
 			DPRINT ("copying buffer....\n");
 			
 			/* memcpy the data... */
@@ -149,10 +146,10 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 			
 		}
 
-		spin_unlock(&readers_lock);
-						
 	}
 reset:
+	spin_unlock(&readers_lock);
+	
 	usb_submit_urb(urb, GFP_ATOMIC);
 
 	DPRINT ("in URB RE-submitted\n");
