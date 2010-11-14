@@ -108,7 +108,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 			DPRINT ("size: %d, data: %s\n", req->size, req->buf);
 			
 			/* remove from list */
-			list_del(req->list);
+			list_del(&req->list);
 			
 			/* release the lock!!! */
 			spin_unlock(&readers_lock);
@@ -207,7 +207,7 @@ int teensy_read(struct read_request *req)
 	req->buf[req->size]= '\0';
 	
 	/* put the request on the tail of the list */
-	list_add_tail(req->list, &readers_list);
+	list_add_tail(&req->list, &readers_list);
 
 	DPRINT ("added read request to list\n");
 	
