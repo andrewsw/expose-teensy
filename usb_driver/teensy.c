@@ -5,6 +5,35 @@
 #include "teensy.h"
 #include "teensy_adc.h"
 
+/* NC: moved these defs and decls here, from teensy.h, to so that i
+ * could #include teensy.h in teensy_adc.c ... they are static and so
+ * are, presumably, not intended for inclusion in other files (and
+ * they caused warnings and errors)
+ */
+
+static struct usb_device_id teensy_table [] = {
+	{ USB_DEVICE(VENDOR_ID, PRODUCT_ID) },
+	{ } /* terminating entry */
+};
+
+MODULE_DEVICE_TABLE(usb, teensy_table);
+
+static int probe_teensy (struct usb_interface *intf,
+			 const struct usb_device_id *id);
+static void disconnect_teensy(struct usb_interface *intf);
+static struct usb_driver teensy_driver = {
+	.name =         "teensy",
+	.probe =        probe_teensy,
+	.disconnect =   disconnect_teensy,
+	.id_table =     teensy_table
+};
+
+/*
+ * module-wide data structures
+ *
+ */
+static LIST_HEAD(readers_list);
+
 /*
  * teensy_interrupt_in_callback
  *
@@ -95,8 +124,6 @@ void init_reader (struct usb_interface *intf)
 	usb_submit_urb(dev->in_urb, GFP_KERNEL);
 
 	DPRINT("in URB submitted\n");
-	
-	
 }
 
 /*
@@ -110,9 +137,9 @@ void init_reader (struct usb_interface *intf)
  * teensy device, it is very possible that they will be serviced out
  * of order.
  */
-int teensy_read(struct read_request *req) 
+int teensy_read(struct read_request *req)
 {
-
+    DPRINT("teensy_read()\n");
 	/* check the request for validity (no nullptrs etc) */
 	/* set request completed to FALSE */
 

@@ -27,28 +27,10 @@ MODULE_LICENSE("GPL");
  * 
  */
 
-/* function protoypes */
-static int probe_teensy (struct usb_interface *intf,
-			 const struct usb_device_id *id);
-static void disconnect_teensy(struct usb_interface *intf);
-
 /*
  * device structs
  * 
  */
-static struct usb_device_id teensy_table [] = {
-	{ USB_DEVICE(VENDOR_ID, PRODUCT_ID) },
-	{ } /* terminating entry */
-};
-
-MODULE_DEVICE_TABLE(usb, teensy_table);
-
-static struct usb_driver teensy_driver = {
-	.name =         "teensy",
-	.probe =        probe_teensy,
-	.disconnect =   disconnect_teensy,
-	.id_table =     teensy_table
-};
 
 struct usb_teensy {
 	struct usb_device *udev;          /* the usb device for this device */
@@ -59,8 +41,6 @@ struct usb_teensy {
 	__u8 out_endpoint;                /* the device endpoint for outgoing packets */
 	struct urb *in_urb;               /* our input urb */
 	int in_interval;                  /* the polling interval of the input endpoint */
-	
-	
 };
 
 /* 
@@ -83,12 +63,6 @@ struct read_request {
 	bool complete;         /* the status of the request */
 	
 };
-
-
-/*
- * module-wide data structures
- *
- */
-static LIST_HEAD(readers_list);
+int teensy_read(struct read_request *);
 
 #endif /* TEENSY_H */

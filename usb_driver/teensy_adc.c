@@ -21,6 +21,7 @@
 #include <linux/seq_file.h>   /* large proc read() */
 
 #include "teensy_adc.h"
+#include "teensy.h"
 
 /* TODO
  *
@@ -92,14 +93,38 @@ int adc_release (struct inode * inode, struct file * filp) {
 ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos)
 {
   //struct adc_dev_t * dev = _get_private_data(filp)->adc;
+  int ret = 0;
+  char * mybuf = kmalloc(count, GFP_KERNEL);
+  struct read_request req = {
+    .t_dev = 'a',
+    .buf   = mybuf,
+    .size  = count,
+  };
 
   pk("read(): buf=0x%X, count=%d, *pos=0x%X\n", ui buf, count, ui *pos);
 
+  if (mybuf == NULL)
+    return -ENOMEM;
+
   /* pass request to teensy_read() */
-
+  ret = teensy_read(&req);
+  if (ret < 0) {
+    pk("read(): error calling teensy_read()\n");
+    goto adc_read_cleanup;
+  }
+  if (ret > count) {
+    pk("read(): teeny_read() returned to large\n");
+    goto adc_read_cleanup;
+  }
   /* copy data to user buf */
+  if (copy_to_user(buf, mybuf, ret)) {
+    ret = -EFAULT;
+    goto adc_read_cleanup;
+  }
 
-  return 0; //count;
+ adc_read_cleanup:
+  kfree(mybuf);
+  return ret; /* TODO: is it correct to return ret on success? */
 }
 
 struct file_operations adc_fops = {
