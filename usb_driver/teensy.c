@@ -192,14 +192,6 @@ int teensy_read(struct read_request *req)
 	/* set request completed to FALSE */
 
 	if (!req) return -EINVAL;
-
-	for (i=0;i<req->size;i++)
-		req->buf[i]='a';
-
-	req->buf[req->size]= '\0';
-	
-	return req->size;
-	
 	
 	req->complete = false;
 	
@@ -207,7 +199,12 @@ int teensy_read(struct read_request *req)
 	spin_lock(&readers_lock);
 
 	DPRINT ("got reader lock\n");
+
 	
+	for (i=0;i<req->size;i++)
+		req->buf[i]='a';
+
+	req->buf[req->size]= '\0';
 	
 	/* put the request on the tail of the list */
 	list_add_tail(req->list, &readers_list);
@@ -216,6 +213,8 @@ int teensy_read(struct read_request *req)
 	
 	/* UNLOCK THE LIST!! */
 	spin_unlock(&readers_lock);
+	
+	return req->size;
 
 	DPRINT ("released reader lock, sleeping\n");
 	
