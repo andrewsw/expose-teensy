@@ -185,9 +185,22 @@ void init_reader (struct usb_interface *intf)
  */
 int teensy_read(struct read_request *req)
 {
+	int i;
+	
 	DPRINT("teensy_read()\n");
 	/* check the request for validity (no nullptrs etc) */
 	/* set request completed to FALSE */
+
+	if (!req) return -EINVAL;
+
+	for (i=0;i<req->size;i++)
+		req->buf[i]='a';
+
+	req->buf[req->size]= '\0';
+	
+	return req->size;
+	
+	
 	req->complete = false;
 	
 	/* LOCK the LIST!! */
