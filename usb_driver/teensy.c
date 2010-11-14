@@ -97,7 +97,8 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		
 		/* search readers list for match, if no match, just
 		 * drop the packet, snoozers are loozers */
-		if (!list_empty(&readers_list) )
+		if (!list_empty(&readers_list)) {
+			
 		    list_for_each(curr, &readers_list){
 			    struct read_request *temp = list_entry(curr, struct read_request, list);
 			    if (temp) {
@@ -112,6 +113,12 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 			    }
 			    
 		    }
+		} else {
+			DPRINT("no readers! Dropping packet!\n");
+			goto reset;
+			
+		}
+		
 
 		if (req && req->buf) {
 
