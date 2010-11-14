@@ -96,7 +96,7 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
   int ret = 0;
   char * mybuf = kmalloc(count, GFP_KERNEL);
   struct read_request req = {
-    .t_dev = 'a',
+    .t_dev = 0x0ab, /* set to match the current default data coming back */
     .buf   = mybuf,
     .size  = count,
   };

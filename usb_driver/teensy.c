@@ -32,7 +32,14 @@ static struct usb_driver teensy_driver = {
  * module-wide data structures
  *
  */
+
+/* list, lock and wait_queue for sleeping readers */
 static LIST_HEAD(readers_list);
+spinlock_t readers_lock;
+
+wait_queue_head_t readers_queue;
+
+
 
 /*
  * teensy_interrupt_in_callback
@@ -48,8 +55,10 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 	int status = urb->status;
 	int i;
 	char data[65];
-	
-
+	struct list_head *curr;
+	char packet_id;
+	struct read_request *req = NULL;
+				
 	DPRINT("interrupt_in callback called\n");
 
 	if (status != 0){
@@ -65,30 +74,53 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		
 		for (i=0; i < urb->actual_length - 3;i+=4) {
 			
-			sprintf(data, "%2x %2x %2x %2x", dev->in_buf[i], dev->in_buf[i+1], dev->in_buf[i+2],dev->in_buf[i+3]);
+			sprintf(data, "%2x %2x %2x %2x",
+				dev->in_buf[i], dev->in_buf[i+1],
+				dev->in_buf[i+2],dev->in_buf[i+3]);
 			data[64]=0x00;
 			DPRINT("data: %s\n", data);
 		}
 		
 		/* examine the first byte */
-
+		packet_id = dev->in_buf[0];
+		
 		/* lock the list!!! */
+		spin_lock(&readers_lock);
+		
 		/* search readers list for match, if no match, just
 		 * drop the packet, snoozers are loozers */
+		list_for_each(curr, &readers_list){
+			req = list_entry(curr, struct read_request, list);
+			if (req->buf[0] == packet_id)
+				break;
+		}
 
-		/* remove from list */
-
-		/* release the lock!!! */
-
-		/* memcpy the data... */
-
-		/* set read_request to completed */
-
-		/* wakeup the readers wait_queue */
-
+		if (req) {
 			
-	}
+			/* remove from list */
+			list_del(req->list);
+			
+			/* release the lock!!! */
+			spin_unlock(&readers_lock);
+			
+			/* memcpy the data... */
+			memcpy(req->buf, dev->in_buf,
+			       urb->actual_length <= req->size ? urb->actual_length : req->size);
+			
+			/* set read_request to completed */
+			req->complete = true;
+			
+			/* wakeup the readers wait_queue */
+			wake_up(&readers_queue);
 
+			goto reset;
+			
+		}
+
+		spin_unlock(&readers_lock);
+						
+	}
+reset:
 	usb_submit_urb(urb, GFP_ATOMIC);
 
 	DPRINT ("in URB RE-submitted\n");
@@ -139,24 +171,30 @@ void init_reader (struct usb_interface *intf)
  */
 int teensy_read(struct read_request *req)
 {
-    DPRINT("teensy_read()\n");
+	DPRINT("teensy_read()\n");
 	/* check the request for validity (no nullptrs etc) */
 	/* set request completed to FALSE */
-
-	/* LOCK the LIST!! */
-	/* put the request on the tail of the list */
-
-	/* UNLOCK THE LIST!! */
+	req->complete = false;
 	
-	/* put ourself on the readers wait_queue */
-
+	/* LOCK the LIST!! */
+	spin_lock(&readers_lock);
+	
+	/* put the request on the tail of the list */
+	list_add_tail(req->list, &readers_list);
+	
+	
+	/* UNLOCK THE LIST!! */
+	spin_unlock(&readers_lock);
+	
 	/* send packet to teensy */
+	/* TODO -- right now teensy just sends data, need to implement
+	 * a protocol for requesting the right kind of data */
 
 	/* wait_event completed == TRUE */
+	wait_event(readers_queue, (req->complete));
 
-	/* back from blocked read, check out what we got... */
-	
-	return 0;
+	/* back from blocked read, check out what we got... */	
+	return req->size;
 		
 }
 
@@ -259,6 +297,10 @@ static int probe_teensy (struct usb_interface *intf,
 	/* save the data pointer in the interface */
 	usb_set_intfdata (intf, dev);
 
+	/* additional setup stuff */
+	spin_lock_init (&readers_lock);
+	init_waitqueue_head(&readers_queue);
+	
 	/* TODO! Here we should call code to register devices in /dev
 	 *
 	 * examples would be /dev/adc0 for an analog-to-digital device
