@@ -21,4 +21,11 @@ test: $(TEST_TRGTS)
 DRIVER:
 	cd ./usb_driver; $(MAKE) $(CMD)
 
+load:
+	insmod usb_driver/teensy_mono.ko
+
+unload:
+	rmmod teensy_mono
+
+reload: unload load
 
