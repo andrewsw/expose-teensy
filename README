@@ -1,4 +1,5 @@
-This is a class project for cs572, Fall 2010 at Portland State University.
+CS 572 Class Project, Fall 2010 at Portland State University
+============================================================
 
 The objective is to develop a general purpose driver for the teensy
 micro-controller that exposes a series of abstract character devices
@@ -7,7 +8,28 @@ for a variety of purposes. The idea is that a simple set of ioctls,
 along with reads and writes can provide general purpose functionality
 without fiddly access to the teensy directly.
 
-Architecture Ideas:
+Repository
+==========
+
+Branches
+--------
+
+* master
+* reader: Andrew's teensy_read() branch
+
+Git Cheat Sheet
+---------------
+
+* create and change to local reader branch tracking global reader branch: `git checkout --track -b reader origin/reader`
+* create and change to a local branch (no tracking): `git checkout -b <branch>`
+* change to a different branch: `git checkout <branch>`
+* show list of branches: `git branch -av`
+* make git use color when sensible: `git config --global color.ui auto`
+* merge <branch> with reader: `git checkout reader; git merge <branch>`
+* show a graphical summary of all history and refs: `git log --graph --all --pretty=oneline --decorate --abbrev-commit`
+
+Architecture Ideas
+==================
 
 Here are some architecture ideas for people to think about:
 
