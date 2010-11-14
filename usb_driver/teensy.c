@@ -83,6 +83,8 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		
 		/* examine the first byte */
 		packet_id = dev->in_buf[0];
+		DPRINT("packet_id: %X\n", packet_id);
+		
 		
 		/* lock the list!!! */
 		spin_lock(&readers_lock);
@@ -90,18 +92,28 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		/* search readers list for match, if no match, just
 		 * drop the packet, snoozers are loozers */
 		list_for_each(curr, &readers_list){
-			req = list_entry(curr, struct read_request, list);
-			if (req->buf[0] == packet_id)
+			struct read_request *temp = list_entry(curr, struct read_request, list);
+			DPRINT("checking req, id: %X\n",temp->buf[0]);
+			
+			if (temp->buf[0] == packet_id){
+				req = temp;
 				break;
+			}
+			
 		}
 
 		if (req) {
+
+			DPRINT ("got matching read request from list\n");
+			DPRINT ("size: %d, data: %s\n", req->size, req->buf);
 			
 			/* remove from list */
 			list_del(req->list);
 			
 			/* release the lock!!! */
 			spin_unlock(&readers_lock);
+
+			DPRINT ("copying buffer....\n");
 			
 			/* memcpy the data... */
 			memcpy(req->buf, dev->in_buf,
@@ -109,6 +121,8 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 			
 			/* set read_request to completed */
 			req->complete = true;
+
+			DPRINT("waking readers\n");
 			
 			/* wakeup the readers wait_queue */
 			wake_up(&readers_queue);
@@ -178,13 +192,19 @@ int teensy_read(struct read_request *req)
 	
 	/* LOCK the LIST!! */
 	spin_lock(&readers_lock);
+
+	DPRINT ("got reader lock\n");
+	
 	
 	/* put the request on the tail of the list */
 	list_add_tail(req->list, &readers_list);
-	
+
+	DPRINT ("added read request to list\n");
 	
 	/* UNLOCK THE LIST!! */
 	spin_unlock(&readers_lock);
+
+	DPRINT ("released reader lock, sleeping\n");
 	
 	/* send packet to teensy */
 	/* TODO -- right now teensy just sends data, need to implement
@@ -193,7 +213,9 @@ int teensy_read(struct read_request *req)
 	/* wait_event completed == TRUE */
 	wait_event(readers_queue, (req->complete));
 
-	/* back from blocked read, check out what we got... */	
+	/* back from blocked read, check out what we got... */
+	DPRINT("back from blocked read, data: %s\n", req->buf);
+	
 	return req->size;
 		
 }
