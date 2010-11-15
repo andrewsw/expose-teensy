@@ -116,7 +116,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 					
 			/* } */
 				
-			}
+			
 		} else {
 			DPRINT("no readers! Dropping packet!\n");
 			goto reset;
