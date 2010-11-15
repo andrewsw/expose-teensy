@@ -100,37 +100,37 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		
 		/* search readers list for match, if no match, just
 		 * drop the packet, snoozers are loozers */
-		if (!list_empty(&readers_list)) {
-			DPRINT("readers list not empty, traversing\n");
+		/* if (!list_empty(&readers_list)) { */
+		/* 	DPRINT("readers list not empty, traversing\n"); */
 			
-			list_for_each(curr, &readers_list){
-				struct read_request *temp = list_entry(curr, struct read_request, list);
-				if (temp) {
+		/* 	list_for_each(curr, &readers_list){ */
+		/* 		struct read_request *temp = list_entry(curr, struct read_request, list); */
+		/* 		if (temp) { */
 					
-					DPRINT("checking req, id: %X\n",temp->buf[0]);
+		/* 			DPRINT("checking req, id: %X\n",temp->buf[0]); */
 					
-					if (temp->buf[0] == packet_id){
-						req = temp;
-						break;
-					}
+		/* 			if (temp->buf[0] == packet_id && !temp->complete){ */
+		/* 				req = temp; */
+		/* 				break; */
+		/* 			} */
 					
-				}
+		/* 		} */
 				
-			}
-		} else {
-			DPRINT("no readers! Dropping packet!\n");
-			goto reset;
+		/* 	} */
+		/* } else { */
+		/* 	DPRINT("no readers! Dropping packet!\n"); */
+		/* 	goto reset; */
 			
-		}
+		/* } */
 		
 
-		/* if (req && req->buf) { */
+		/* if (req) { */
+
+		/* 	/\* set read_request to completed so no other thread grabs it, lock? *\/ */
+		/* 	req->complete = true; */
 
 		/* 	DPRINT ("got matching read request from list\n"); */
 		/* 	DPRINT ("size: %d, data: %s\n", req->size, req->buf); */
-			
-		/* 	/\* remove from list *\/ */
-		/* 	list_del(&req->list); */
 			
 		/* 	DPRINT ("copying buffer....\n"); */
 			
@@ -138,9 +138,6 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		/* 	/\* memcpy(req->buf, dev->in_buf, *\/ */
 		/* 	/\*        urb->actual_length <= req->size ? urb->actual_length : req->size); *\/ */
 			
-		/* 	/\* set read_request to completed *\/ */
-		/* 	req->complete = true; */
-
 		/* 	DPRINT("waking readers\n"); */
 			
 		/* 	/\* wakeup the readers wait_queue *\/ */
@@ -252,11 +249,16 @@ int teensy_read(struct read_request *req)
 
 	DPRINT ("faking data...\n");
 	req->buf[0]='a';
-	req->buf[1]='a';
+	req->buf[1]='\0';
 	req->size=2;
 	
 	/* back from blocked read, check out what we got... */
 	DPRINT("back from blocked read, data: %s\n", req->buf);
+
+	DPRINT("removing request from readers list\n");
+	spin_lock(&readers_lock);
+	list_del(&req->list);
+	spin_unlock(&readers_lock);
 	
 	return req->size;
 }
