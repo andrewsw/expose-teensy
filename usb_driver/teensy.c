@@ -112,6 +112,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 					DPRINT("checking req, id: %X\n",temp->t_dev);
 					
 					if (temp->buf[0] == packet_id && !temp->complete) {
+						DPRINT("Matched request!! \n");
 						req = temp;
 						break;
 					}
