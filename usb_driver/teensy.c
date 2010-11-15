@@ -88,7 +88,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		}
 		
 		/* examine the first byte */
-		packet_id = dev->in_buf[0] & 0xff;
+		packet_id = dev->in_buf[0] & 0x0ff;
 		DPRINT("packet_id: %x\n", packet_id);
 		
 		
@@ -100,32 +100,36 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		
 		/* search readers list for match, if no match, just
 		 * drop the packet, snoozers are loozers */
-		/* if (!list_empty(&readers_list)) { */
-		/* 	DPRINT("readers list not empty, traversing\n"); */
+		if (!list_empty(&readers_list)) {
+			DPRINT("readers list not empty, traversing\n");
 			
-		/* 	list_for_each(curr, &readers_list){ */
-		/* 		struct read_request *temp = list_entry(curr, struct read_request, list); */
-		/* 		if (temp) { */
+			list_for_each(curr, &readers_list){
+				struct read_request *temp = list_entry(curr, struct read_request, list);
+				if (temp) {
 					
-		/* 			DPRINT("checking req, id: %X\n",temp->buf[0]); */
+					DPRINT("checking req, id: %X\n",temp->t_dev);
 					
-		/* 			if (temp->buf[0] == packet_id && !temp->complete){ */
-		/* 				req = temp; */
-		/* 				break; */
-		/* 			} */
+					if (temp->buf[0] == packet_id && !temp->complete){
+						req = temp;
+						break;
+					}
 					
-		/* 		} */
+				}
 				
-		/* 	} */
-		/* } else { */
-		/* 	DPRINT("no readers! Dropping packet!\n"); */
-		/* 	goto reset; */
+			}
+		} else {
+			DPRINT("no readers! Dropping packet!\n");
+			goto reset;
 			
-		/* } */
-		
+		}
 
-		/* if (req) { */
+		if (req) {
 
+			DPRINT("faking data in interrupt handler\n");
+			req->buf[0]='a';
+			req->buf[1]='\0';
+			req->size=2;
+			
 		/* 	/\* set read_request to completed so no other thread grabs it, lock? *\/ */
 		/* 	req->complete = true; */
 
@@ -145,7 +149,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 
 		/* 	goto reset; */
 			
-		/* } */
+		}
 
 	}
 reset:
@@ -245,13 +249,8 @@ int teensy_read(struct read_request *req)
 	 * a protocol for requesting the right kind of data */
 	
 	/* wait_event completed == TRUE */
-//	wait_event(readers_queue, (req->complete));
+	wait_event(readers_queue, (req->complete));
 
-	DPRINT ("faking data...\n");
-	req->buf[0]='a';
-	req->buf[1]='\0';
-	req->size=2;
-	
 	/* back from blocked read, check out what we got... */
 	DPRINT("back from blocked read, data: %s\n", req->buf);
 
