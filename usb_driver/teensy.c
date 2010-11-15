@@ -76,54 +76,27 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 	}
 
 	if (urb->actual_length > 0 && dev->in_buf) {
-		DPRINT("actual_length: %d\n", urb->actual_length);
-		
-		for (i=0; i < urb->actual_length - 3;i+=4) {
-			
-			sprintf(data, "%2x %2x %2x %2x",
-				dev->in_buf[i], dev->in_buf[i+1],
-				dev->in_buf[i+2],dev->in_buf[i+3]);
-			data[64]=0x00;
-			DPRINT("data: %s\n", data);
-		}
 		
 		/* examine the first byte */
 		packet_id = dev->in_buf[0] & 0x0ff;
-		DPRINT("packet_id: %x\n", packet_id);
-		
 		
 		/* lock the list!!! */
 		spin_lock(&readers_lock);
 
-		DPRINT ("locked the readers lock\n");
-		
-		
 		/* search readers list for match, if no match, just
 		 * drop the packet, snoozers are loozers */
 		if (!list_empty(&readers_list)) {
-			DPRINT("readers list not empty, traversing\n");
-			
 			list_for_each(curr, &readers_list){
-				DPRINT("first entry in readers list\n");
 				
 				struct read_request *temp = list_entry(curr, struct read_request, list);
 				if (temp) {
-					
-					DPRINT("checking req, id: %X\n",temp->t_dev);
-					DPRINT("packet_id %x\n", packet_id);
-					DPRINT("temp->complete: %d\n", temp->complete);
-					
-					
 					if (temp->t_dev == packet_id && !temp->complete) {
-						DPRINT("Matched request!! \n");
 						req = temp;
 						break;
 					}
 					
 				}
 			}
-			
-				
 			
 		} else {
 			DPRINT("no readers! Dropping packet!\n");
@@ -136,17 +109,9 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 			/* set read_request to completed so no other thread grabs it, lock?  */
 		 	req->complete = true; 
 
-			DPRINT ("got matching read request from list\n");
-			DPRINT ("req size: %d\n", req->size);
-			DPRINT ("urb size: %d\n", urb->actual_length);
-						
-			DPRINT ("copying buffer....\n");
-			
 			/* memcpy the data... */
 			memcpy(req->buf, dev->in_buf,
 			       urb->actual_length <= req->size ? urb->actual_length : req->size);
-			
-			DPRINT("waking readers\n");
 			
 			/* wakeup the readers wait_queue */
 		 	wake_up(&readers_queue); 
@@ -231,32 +196,19 @@ int teensy_read(struct read_request *req)
 	/* put the request on the tail of the list */
 	list_add_tail(&req->list, &readers_list); 
 
-	DPRINT ("added read request to list, list looks like:\n");
-
-	list_for_each(curr, &readers_list) {
-		
-		temp = list_entry(temp, struct read_request, list);
-		DPRINT("entry device: %x", temp->t_dev);
-		
-	}
-	
-	
 	/* UNLOCK THE LIST!! */
 	spin_unlock(&readers_lock);
 	
-	DPRINT ("released reader lock, sleeping\n");
-	
 	/* send packet to teensy */
-	/* TODO -- right now teensy just sends data, need to implement
-	 * a protocol for requesting the right kind of data */
+	/* TODO -- right now teensy just sends data on its own, need
+	 * to implement a protocol for requesting the right kind of
+	 * data */
 	
 	/* wait_event completed == TRUE */
 	wait_event(readers_queue, (req->complete));
 
-	/* back from blocked read, check out what we got... */
-	DPRINT("back from blocked read, data: %s\n", req->buf);
-
-	DPRINT("removing request from readers list\n");
+	/* back from blocked read, get the hell off the readers list
+	 * because we'll be freed soon...*/
 	spin_lock(&readers_lock);
 	list_del(&req->list);
 	spin_unlock(&readers_lock);
@@ -274,7 +226,7 @@ static int probe_teensy (struct usb_interface *intf,
 	struct usb_teensy *dev = NULL;
 	struct usb_host_interface *iface_desc;
 	struct usb_endpoint_descriptor *endpoint;
-	int i;
+	int i, result;
 		
 	DPRINT("connect detected\n");
 
@@ -367,27 +319,17 @@ static int probe_teensy (struct usb_interface *intf,
 	spin_lock_init (&readers_lock);
 	init_waitqueue_head(&readers_queue);
 	
-	/* TODO! Here we should call code to register devices in /dev
-	 *
-	 * examples would be /dev/adc0 for an analog-to-digital device
-	 *
-	 * Also we should set up a URB for recieving data from the
-	 * device.  That URB should call a completion function (which
-	 * runs in interrupt mode) to handle data coming back from the
-	 * device.  That completion function should also resubmit the
-	 * URB to allow another packet to come in. Finally, (but not
-	 * last...) the completion function should take the buffer
-	 * that comes in (dev->in_buf) and peek at the first few bytes
-	 * to figure out what it is and copy it to a ring-buffer for
-	 * the appropriate device and perhaps wakeup the appropriate
-	 * sleeping handler to handle that data
-	 * 
-	 */
+	/* sub-module-specific init */
+	/* TODO -- move all the inits into a function? */
+	result = adc_init();
+	if (result)
+		printk(KERN_ERR "teensy: failed to load adc");
 
+	/* now start our interrupt driven reader... all other setup is done */
 	init_reader(intf);
 	
 
-	return 0;
+	return 0; /* TODO, really? */
   
 }
 
@@ -414,6 +356,10 @@ static void disconnect_teensy(struct usb_interface *intf)
 		kfree(dev);
 
 	}
+
+	/* sub-module-specific cleanup */
+	adc_exit();
+
 	DPRINT("completed disconnect\n");
 	
 }
@@ -433,18 +379,13 @@ teensy_init(void)
 	
 	DPRINT("initializing...\n");
 
-    /* generic init */
+	/* generic init */
 	result = usb_register (&teensy_driver);
 	if (result) {
 		printk(KERN_ERR "teensy: failed to register usb device! error code: %d", result);
 	} else {		
 		DPRINT("initialized.\n");
 	}
-
-    /* sub-module-specific init */
-	result = adc_init();
-    if (result)
-      printk(KERN_ERR "teensy: failed to load adc");
 
 	return result;
 }
@@ -462,10 +403,7 @@ teensy_exit(void)
 {
 	DPRINT("teensy: Removing teensy\n");
     
-    /* sub-module-specific cleanup */
-    adc_exit();
-
-    /* generic cleanup */
+	/* generic cleanup */
 	usb_deregister(&teensy_driver);
 	
 	DPRINT("removal complete.\n");
