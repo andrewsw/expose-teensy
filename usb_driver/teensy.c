@@ -103,18 +103,22 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		if (!list_empty(&readers_list)) {
 			DPRINT("readers list not empty, traversing\n");
 			
-			/* list_for_each(curr, &readers_list){ */
-			/* 	struct read_request *temp = list_entry(curr, struct read_request, list); */
-			/* 	if (temp) { */
+			list_for_each(curr, &readers_list){
+				DPRINT("first entry in readers list\n");
+				
+				struct read_request *temp = list_entry(curr, struct read_request, list);
+				if (temp) {
 					
-			/* 		DPRINT("checking req, id: %X\n",temp->t_dev); */
+					DPRINT("checking req, id: %X\n",temp->t_dev);
 					
-			/* 		if (temp->buf[0] == packet_id && !temp->complete){ */
-			/* 			req = temp; */
-			/* 			break; */
-			/* 		} */
+					if (temp->buf[0] == packet_id && !temp->complete) {
+						req = temp;
+						break;
+					}
 					
-			/* } */
+				}
+			}
+			
 				
 			
 		} else {
@@ -131,7 +135,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 			req->size=2;
 			
 		/* 	/\* set read_request to completed so no other thread grabs it, lock? *\/ */
-		/* 	req->complete = true; */
+		 	req->complete = true; 
 
 		/* 	DPRINT ("got matching read request from list\n"); */
 		/* 	DPRINT ("size: %d, data: %s\n", req->size, req->buf); */
