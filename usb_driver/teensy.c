@@ -103,18 +103,18 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		if (!list_empty(&readers_list)) {
 			DPRINT("readers list not empty, traversing\n");
 			
-			list_for_each(curr, &readers_list){
-				struct read_request *temp = list_entry(curr, struct read_request, list);
-				if (temp) {
+			/* list_for_each(curr, &readers_list){ */
+			/* 	struct read_request *temp = list_entry(curr, struct read_request, list); */
+			/* 	if (temp) { */
 					
-					DPRINT("checking req, id: %X\n",temp->t_dev);
+			/* 		DPRINT("checking req, id: %X\n",temp->t_dev); */
 					
-					if (temp->buf[0] == packet_id && !temp->complete){
-						req = temp;
-						break;
-					}
+			/* 		if (temp->buf[0] == packet_id && !temp->complete){ */
+			/* 			req = temp; */
+			/* 			break; */
+			/* 		} */
 					
-				}
+			/* } */
 				
 			}
 		} else {
@@ -145,7 +145,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 		/* 	DPRINT("waking readers\n"); */
 			
 		/* 	/\* wakeup the readers wait_queue *\/ */
-		/* 	//wake_up(&readers_queue); */
+		 	wake_up(&readers_queue); 
 
 		/* 	goto reset; */
 			
