@@ -133,30 +133,24 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 
 		if (req) {
 
-			DPRINT("faking data in interrupt handler\n");
-			req->buf[0]='a';
-			req->buf[1]='\0';
-			req->size=2;
-			
-		/* 	/\* set read_request to completed so no other thread grabs it, lock? *\/ */
+			/* set read_request to completed so no other thread grabs it, lock?  */
 		 	req->complete = true; 
 
-		/* 	DPRINT ("got matching read request from list\n"); */
-		/* 	DPRINT ("size: %d, data: %s\n", req->size, req->buf); */
+			DPRINT ("got matching read request from list\n");
+			DPRINT ("req size: %d\n", req->size);
+			DPRINT ("urb size: %d\n", urb->actual_length);
+						
+			DPRINT ("copying buffer....\n");
 			
-		/* 	DPRINT ("copying buffer....\n"); */
+			/* memcpy the data... */
+			memcpy(req->buf, dev->in_buf,
+			       urb->actual_length <= req->size ? urb->actual_length : req->size);
 			
-		/* 	/\* memcpy the data... *\/ */
-		/* 	/\* memcpy(req->buf, dev->in_buf, *\/ */
-		/* 	/\*        urb->actual_length <= req->size ? urb->actual_length : req->size); *\/ */
+			DPRINT("waking readers\n");
 			
-		/* 	DPRINT("waking readers\n"); */
-			
-		/* 	/\* wakeup the readers wait_queue *\/ */
+			/* wakeup the readers wait_queue */
 		 	wake_up(&readers_queue); 
 
-		/* 	goto reset; */
-			
 		}
 
 	}
