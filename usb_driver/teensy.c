@@ -389,6 +389,9 @@ teensy_init(void)
 		DPRINT("initialized.\n");
 	}
 
+    /* DEBUG: check module insertion w/o teensy present */
+    //init_submodules();
+
 	return result;
 }
 
@@ -404,7 +407,9 @@ void __exit
 teensy_exit(void)
 {
 	DPRINT("teensy: Removing teensy\n");
-    
+    /* DEBUG: check module cleanup w/o teensy present */
+    //exit_submodules();
+
 	/* generic cleanup */
 	usb_deregister(&teensy_driver);
 	
