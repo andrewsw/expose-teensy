@@ -63,7 +63,7 @@ int pack(struct read_request * req) {
      */
 
     /* validate input */
-    if (req->size + 2 > RAWHID_RX_SIZE
+    if (req->size + 1+1 > RAWHID_RX_SIZE
         || req->size >= 1 << 8) { /* too big for uint_8 */
       printk(KERN_ERR "pack(): req->size too large: %i\n", req->size);
       return -EINVAL;
@@ -76,7 +76,7 @@ int pack(struct read_request * req) {
     /* pack data */
     packed[0] = req->t_dev;
     packed[1] = (uint8_t) req->size;
-    memcpy(packed+2,req->buf,req->size);
+    memcpy(packed+1+1,req->buf,req->size);
     /* zalloc already made pad bytes zero */
 
     /* free old buf; insert new buf and updated size */
@@ -94,7 +94,43 @@ int pack(struct read_request * req) {
  * @return: < 0 on failure; 0 o/w
  */
 int unpack(struct read_request * req) {
-  
+    char * unpacked;
+    uint8_t size;
+
+    /* received format assumed same as setup in pack() */
+
+    /* validate input */
+    /* ASSUME RAWHID_RX_SIZE == RAWHID_TX_SIZE (true by default) */
+    if (req->size > RAWHID_RX_SIZE) {
+      printk(KERN_WARNING "unpack(): req->size too large: %i\n", req->size);
+      /* return -EINVAL; */ // not an actual error, but very suspicious
+    }
+    /* does buf contain enough data to encode destination and size ? */
+    if (req->size < 1+1) {
+      printk(KERN_ERR "unpack(): req->size too small: %i\n", req->size);
+      return -EINVAL;
+    }
+    /* does buf correspond to req ? */
+    if (req->buf[0] != req->t_dev) {
+      printk(KERN_ERR "unpack(): req->buf not for req->dev_t: %c != %c\n",
+             req->buf[0], req->t_dev);
+      return -EINVAL;
+    }
+
+    /* unpack data */
+    size = (uint8_t) req->buf[1];
+    printk(KERN_DEBUG "unpack(): coded rx packet size is: %i\n", size);
+    unpacked = kzalloc(size, GFP_ATOMIC);
+    if (!unpacked)
+      return -ENOMEM;
+    memcpy(unpacked,req->buf+1+1,size);
+
+    /* free old buf; insert new buf and updated size */
+    kfree(req->buf);
+    req->buf = unpacked;
+    req->size = size;
+
+    return 0;
 }
 
 /*
@@ -110,6 +146,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 	struct usb_teensy *dev;
 	int status;
 	int i;
+    int ret;
 	char data[RAWHID_RX_SIZE+1]; /* TODO: why +1 ??? */
 	struct list_head *curr;
 	char packet_id;
@@ -165,15 +202,21 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 			/* set read_request to completed so no other thread grabs it, lock?  */
 		 	req->complete = true; 
 
-			/* memcpy the data... */
-			memcpy(req->buf, dev->in_buf,
-			       urb->actual_length <= req->size ? urb->actual_length : req->size);
-			
+			/* copy the received data into the req and upack */
+            kfree(req->buf); /* free old buf: we're making new buf */
+            req->buf = kmalloc(urb->actual_length, GFP_ATOMIC);
+            if(!req->buf) /* TODO: what do we do ??? */
+              printk(KERN_ERR "teensy_interrupt_in_callback(): "
+                "failed atomic kmalloc: we're hosed!\n"); //return -ENOMEM;
+            req->size = urb->actual_length;
+			memcpy(req->buf, dev->in_buf, urb->actual_length);
+            if ((ret = unpack(req)) < 0) /* TODO: what do we do ??? */
+              printk(KERN_ERR "teensy_interrupt_in_callback(): "
+                "failed unpack(): we're hosed!\n"); //return -EOHNO;
+
 			/* wakeup the readers wait_queue */
 		 	wake_up(&readers_queue); 
-
 		}
-
 	}
 reset:
 	spin_unlock(&readers_lock);
@@ -240,9 +283,15 @@ void init_reader (struct usb_interface *intf)
  * non-deterministic. If there are multiple reads queued for the same
  * teensy device, it is very possible that they will be serviced out
  * of order.
+ * 
+ * @req: req->buf must be kfree()able pointer; caller is expected to
+ * free req->buf after return; req->buf WILL NOT be the same pointer
+ * as was passed! req->buf and req->size are modified and contain the
+ * result on return.
  */
 int teensy_read(struct read_request *req)
 {
+    int ret;
     struct usb_teensy * dev = teensy_dev;
     struct urb * out_urb;
 	struct read_request* temp;
@@ -282,8 +331,10 @@ int teensy_read(struct read_request *req)
 	 * to implement a protocol for requesting the right kind of
 	 * data */
 
-    /* HACK: overwrites first byte of buf! */
-    req->buf[0] = 'e'; //req->t_dev;
+    /* HACK: hardcode destination! */
+    req->t_dev = 'e';
+    if ((ret = pack(req)) < 0)
+      return ret;
     DPRINT("teensy_read(): 1 \n");
 	out_urb = usb_alloc_urb(0, GFP_KERNEL);
     DPRINT("teensy_read(): 2 \n");
@@ -308,7 +359,7 @@ int teensy_read(struct read_request *req)
 	spin_lock(&readers_lock);
 	list_del(&req->list);
 	spin_unlock(&readers_lock);
-	
+
 	return req->size;
 }
 

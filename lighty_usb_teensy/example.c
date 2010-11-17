@@ -191,6 +191,3 @@ ISR(TIMER0_OVF_vect)
 		do_output = 1;
 	}
 }
-
-
-
