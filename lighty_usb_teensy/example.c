@@ -48,14 +48,16 @@ uint8_t buffer[RAWHID_RX_SIZE];
  * after unpacking.  This is not an issue in the current single-thread
  * setup.
  */
-struct teensy_req unpack(uint8_t * buf) {
-        struct teensy_req req = {
+struct teensy_msg unpack(uint8_t * buf) {
+        struct teensy_msg msg = {
                 .destination = buf[0],
                 .size        = buf[1],
                 .buf         = buf+2,
         };
-        return req;
+        return msg;
 }
+
+
 
 int main(void)
 {

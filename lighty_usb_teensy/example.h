@@ -3,7 +3,7 @@
 
 /* unpacked request struct; analogous to struct read_request in
  * ../usb_driver/teensy.h */
-struct teensy_req {
+struct teensy_msg {
         uint8_t destination; /* t_dev in kernel land version */
         uint8_t size;
         uint8_t *buf;
