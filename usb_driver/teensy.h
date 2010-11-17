@@ -21,7 +21,6 @@
 MODULE_AUTHOR("Andrew Sackville-West"); 
 MODULE_LICENSE("GPL");
 
-
 /*
  * module parameters
  * 

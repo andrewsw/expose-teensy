@@ -3,10 +3,13 @@
  * 
  */
 #include "teensy.h"
-#include "teensy_adc.h"
+#include "submodules.h"
+
+/*** usb structs ***/
 
 /* NC: moved these defs and decls here, from teensy.h, to so that i
  * could #include teensy.h in teensy_adc.c ... they are static and so
+
  * are, presumably, not intended for inclusion in other files (and
  * they caused warnings and errors)
  */
@@ -320,8 +323,7 @@ static int probe_teensy (struct usb_interface *intf,
 	init_waitqueue_head(&readers_queue);
 	
 	/* sub-module-specific init */
-	/* TODO -- move all the inits into a function? */
-	result = adc_init();
+	result = init_submodules();
 	if (result)
 		printk(KERN_ERR "teensy: failed to load adc");
 
@@ -358,7 +360,7 @@ static void disconnect_teensy(struct usb_interface *intf)
 	}
 
 	/* sub-module-specific cleanup */
-	adc_exit();
+    exit_submodules();
 
 	DPRINT("completed disconnect\n");
 	
