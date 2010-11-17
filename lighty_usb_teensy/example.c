@@ -32,15 +32,34 @@
 #include <util/delay.h>
 #include "usb_rawhid.h"
 #include "analog.h"
+#include "example.h"
 
 #define CPU_PRESCALE(n)	(CLKPR = 0x80, CLKPR = (n))
 
 volatile uint8_t do_output=0;
-uint8_t buffer[64];
+uint8_t buffer[RAWHID_RX_SIZE];
+
+/* unpack a buffer received from kernel land; inverts pack from kernel land
+ *
+ * @buf: buffer from kernel land, packed by
+ * ../usb_driver/teensy.c:pack(), of size RAWHID_RX_SIZE
+ *
+ * WARNING: does not currently copy buf, so don't free or overwrite
+ * after unpacking.  This is not an issue in the current single-thread
+ * setup.
+ */
+struct teensy_req unpack(uint8_t * buf) {
+        struct teensy_req req = {
+                .destination = buf[0],
+                .size        = buf[1],
+                .buf         = buf+2,
+        };
+        return req;
+}
 
 int main(void)
 {
-	int8_t r, i, val;
+    int8_t r, i, val;
 	uint16_t count=0;
 
 	// set for 16 MHz clock

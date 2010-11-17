@@ -14,6 +14,14 @@ int8_t usb_rawhid_send(const uint8_t *buffer, uint8_t timeout); // send a packet
 #define usb_debug_putchar(c)
 #define usb_debug_flush_output()
 
+// These determine the bandwidth that will be allocated
+// for your communication.  You do not need to use it
+// all, but allocating more than necessary means reserved
+// bandwidth is no longer available to other USB devices.
+#define RAWHID_TX_SIZE		64	// transmit packet size
+#define RAWHID_TX_INTERVAL	2	// max # of ms between transmit packets
+#define RAWHID_RX_SIZE		64	// receive packet size
+#define RAWHID_RX_INTERVAL	8	// max # of ms between receive packets
 
 // Everything below this point is only intended for usb_serial.c
 #ifdef USB_PRIVATE_INCLUDE

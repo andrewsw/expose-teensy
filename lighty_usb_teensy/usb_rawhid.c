@@ -44,16 +44,6 @@
 #define RAWHID_USAGE_PAGE	0xFFAB	// recommended: 0xFF00 to 0xFFFF
 #define RAWHID_USAGE		0x0200	// recommended: 0x0100 to 0xFFFF
 
-// These determine the bandwidth that will be allocated
-// for your communication.  You do not need to use it
-// all, but allocating more than necessary means reserved
-// bandwidth is no longer available to other USB devices.
-#define RAWHID_TX_SIZE		64	// transmit packet size
-#define RAWHID_TX_INTERVAL	2	// max # of ms between transmit packets
-#define RAWHID_RX_SIZE		64	// receive packet size
-#define RAWHID_RX_INTERVAL	8	// max # of ms between receive packets
-
-
 /**************************************************************************
  *
  *  Endpoint Buffer Configuration
