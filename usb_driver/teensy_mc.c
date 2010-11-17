@@ -86,80 +86,80 @@ int mc_release (struct inode * inode, struct file * filp) {
         return 0;
 }
 
-
-/* @buf:
- * @count:
- * @return:
- */
-ssize_t mc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos)
-{
-        //struct mc_dev_t * dev = _get_private_data(filp)->mc;
-        int ret = 0;
-        char * mybuf = kmalloc(count, GFP_KERNEL);
-        struct read_request req = {
-                .t_dev = 'a',
-                .buf   = mybuf,
-                .size  = count,
-        };
-
-        pk("read(): buf=0x%X, count=%d, *pos=0x%X\n", ui buf, count, ui *pos);
-
-        if (mybuf == NULL)
-                return -ENOMEM;
-
-        /* pass request to teensy_read() */
-        ret = teensy_read(&req);
-        if (ret < 0) {
-                pk("read(): error calling teensy_read()\n");
-                goto mc_read_cleanup;
-        }
-        if (ret > count) {
-                pk("read(): teeny_read() returned to large\n");
-                goto mc_read_cleanup;
-        }
-        /* copy data to user buf */
-        if (copy_to_user(buf, mybuf, ret)) {
-                ret = -EFAULT;
-                goto mc_read_cleanup;
-        }
-
-mc_read_cleanup:
-        kfree(mybuf);
-        return ret; /* TODO: is it correct to return ret on success? */
-}
-
 /* MAYBE TODO: would be nicer to use /sys instead of ioctls? */
 int mc_ioctl (struct inode * inode, struct file * filp, unsigned int cmd, unsigned long arg) {
-        int speed;
-        //struct mc_dev_t * dev = _get_private_data(filp)->mc;
+        uint8_t speed;
+        char direction;
+        /* send msg */
+        /* buf format is
+         *
+         * [speed]     : 1 byte
+         * [direction] : 1 byte
+         */
+        int ret = 0;
+        struct read_request req = {
+                /* TODO: use correct adc code */
+                .t_dev = 'm',
+                .buf   = kmalloc(1+1, GFP_KERNEL),
+                .size  = 1+1,
+        };
 
-        pk("ioctl(): iminor=%d, filp=0x%X, cmd=0x%X, arg=0x%X\n", iminor(inode), ui filp, ui cmd, ui arg);
+        pk("mc_ioctl(): iminor=%d, filp=0x%X, cmd=0x%X, arg=0x%X\n",
+           iminor(inode), ui filp, ui cmd, ui arg);
 
-        speed = (int) arg;
+        if (req.buf == NULL) {
+                pk("mc_ioctl(): no mem when allocing zero bytes\n");
+                return -ENOMEM;
+        }
+
+        /* compute msg params */
+        speed = (uint8_t) (int) arg; /* NC: paranoid intermediate cast ... */
         switch (cmd) {
 
         case MC_IOC_STOP:
+                direction = 'f'; /* arbitrary */
                 speed = 0;
-                /* fall through */
+                break;
 
         case MC_IOC_FWD:
-                /* set speed */
+                direction = 'f';
                 break;
 
         case MC_IOC_REV:
+                direction = 'r';
                 /* set speed */
                 break;
 
         default:
                 return -ENOTTY; /* this is the right error code according to ldd3 :P */
         }
+
+        /* pack msg */
+        req.buf[0] = speed;
+        req.buf[1] = direction;
+
+        /* pass request to teensy_read() */
+        /* teensy_read() returns a DIFFERENT buf in req->buf, so we must
+           free that; our mybuf was already free'd in teensy_read().
+        */
+        ret = teensy_read(&req);
+        if (ret < 0) {
+                pk("mc_ioctl(): error calling teensy_read()\n");
+                return ret;
+        }
+
+        /* force string */
+        if (req.size > 0)
+                req.buf[req.size-1] = '\0';
+        printk(KERN_DEBUG "mc_ioctl(): read %i bytes [%s] from teensy\n",
+               req.size, req.buf);
+
+        kfree(req.buf); /* free the NEW buf */
         return 0;
 }
 
-
 struct file_operations mc_fops = {
         .owner   = THIS_MODULE,
-        .read    = mc_read,
         .open    = mc_open,
         .release = mc_release,
         .ioctl   = mc_ioctl,
