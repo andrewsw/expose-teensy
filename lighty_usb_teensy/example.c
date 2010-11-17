@@ -23,6 +23,8 @@
 
 // Modified to provide PWM Motor control using Timer 1
 //	11/9/2010     -jkl
+// Fixed port definitions to comply with Atmel desires. 11/16/2010 -jkl
+//	ADCs only read when asked.
 
 #include <avr/io.h>
 #include <avr/pgmspace.h>
@@ -32,18 +34,6 @@
 #include "analog.h"
 
 #define CPU_PRESCALE(n)	(CLKPR = 0x80, CLKPR = (n))
-
-// this is done just to get this to build
-#define PD1	1
-#define PD2	2
-#define PD3	3
-#define PD4	4
-#define PD6	6
-#define PD7	7
-#define PC6	6
-#define PC7	7
-#define PB5	5
-#define PB6	6
 
 volatile uint8_t do_output=0;
 uint8_t buffer[64];
@@ -69,7 +59,7 @@ int main(void)
 // Set up Timer 1 for PWM control.
 // P&F Correct, Runs 5KHz. Divide 16Mhz clock by 8, cycle = 200.
 // Make OCR1A & B outputs.
-	DDRB |= ((1<<PB5) | (1<<PB6));
+	DDRB |= ((1<<PORTB5) | (1<<PORTB6));
 	//TCCR1A = (1<<COM1A1) | (1<<COM1A0) | (1<<COM1B1) | (1<<COM1B0);
 	TCCR1A = (1<<COM1A1)  | (1<<COM1B1) ; 
 	TCCR1B = (1<<WGM13) | (1<<CS11);
@@ -78,10 +68,10 @@ int main(void)
 	OCR1B = 0; 
 
 // Set up Control Signals. PD6&7 for OCR1B; PC6&7 for OCR1A.
-	DDRD |= (1<<PD6) | (1<<PD7);
-	DDRC |= (1<<PC6) | (1<<PC7);
-	PORTD &= ~((1<<PD6) | (1<<PD7));	// take low to start (off)
-	PORTC &= ~((1<<PC6) | (1<<PC7));
+	DDRD |= (1<<PORTD6) | (1<<PORTD7);
+	DDRC |= (1<<PORTC6) | (1<<PORTC7);
+	PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// take low to start (off)
+	PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
 
         // Configure timer 0 to generate a timer overflow interrupt every
         // 256*1024 clock cycles, or approx 61 Hz when using 16 MHz clock
@@ -100,55 +90,56 @@ int main(void)
 // PD7 --> Blue 1
 			switch(buffer[0]){
 				case 'a':		// Motors Fwd, 87.5%
-					PORTD &= ~((1<<PD6) | (1<<PD7));	// turns off motors
-					PORTC &= ~((1<<PC6) | (1<<PC7));
+					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
+					PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
 					OCR1A = 175;
 					OCR1B = 175; 
 					_delay_ms(500);
-					PORTD |= (1<<PD6);	
-					PORTC |= (1<<PC6);
+					PORTD |= (1<<PORTD6);	
+					PORTC |= (1<<PORTC6);
 					break;
 				case 'b':		// Motors Fwd, 50%
-					PORTD &= ~((1<<PD6) | (1<<PD7));	// turns off motors
-					PORTC &= ~((1<<PC6) | (1<<PC7));
+					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
+					PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
 					OCR1A = 100;
 					OCR1B = 100; 
 					_delay_ms(500);
-					PORTD |= (1<<PD6);	
-					PORTC |= (1<<PC6);
+					PORTD |= (1<<PORTD6);	
+					PORTC |= (1<<PORTC6);
 					break;
 				case 'c':		// Motors Rev, 50%
-					PORTD &= ~((1<<PD6) | (1<<PD7));	// turns off motors
-					PORTC &= ~((1<<PC6) | (1<<PC7));
+					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
+					PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
 					OCR1A = 100;
 					OCR1B = 100; 
 					_delay_ms(500);
-					PORTD |= (1<<PD7);	
-					PORTC |= (1<<PC7);
+					PORTD |= (1<<PORTD7);	
+					PORTC |= (1<<PORTC7);
 					break;
 				case 'd':
-					DDRD |= (1<<PD1);
-					PORTD |= (1<<PD1);
-					PORTD &= ~((1<<PD6) | (1<<PD7));	// turns off motors
-					PORTC &= ~((1<<PC6) | (1<<PC7));
+					DDRD |= (1<<PORTD1);
+					PORTD |= (1<<PORTD1);
+					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
+					PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
 					OCR1A = 0;
 					OCR1B = 0; 
 					_delay_ms(500);
-					PORTD &= ~(1<<PD1);
+					PORTD &= ~(1<<PORTD1);
 					_delay_ms(500);
 					break;
 				case 'e':
-					DDRD |= (1<<PD2);
-					PORTD |= (1<<PD2);
+					DDRD |= (1<<PORTD2);
+					PORTD |= (1<<PORTD2);
 					_delay_ms(500);
-					PORTD &= ~(1<<PD2);
+					PORTD &= ~(1<<PORTD2);
 					_delay_ms(500);
+					do_output = 1;		// tell the ADCs to sample
 					break;
 				case 'f':
-					DDRD |= (1<<PD3);
-					PORTD |= (1<<PD3);
+					DDRD |= (1<<PORTD3);
+					PORTD |= (1<<PORTD3);
 					_delay_ms(500);
-					PORTD &= ~(1<<PD3);
+					PORTD &= ~(1<<PORTD3);
 					_delay_ms(500);
 					break;
 				default:
@@ -188,6 +179,7 @@ int main(void)
 }
 
 // This interrupt routine is run approx 61 times per second.
+
 ISR(TIMER0_OVF_vect)
 {
 	static uint8_t count=0;
@@ -198,3 +190,4 @@ ISR(TIMER0_OVF_vect)
 		do_output = 1;
 	}
 }
+
