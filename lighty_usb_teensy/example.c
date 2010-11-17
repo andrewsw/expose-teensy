@@ -32,7 +32,7 @@
 #include "analog.h"
 
 #define CPU_PRESCALE(n)	(CLKPR = 0x80, CLKPR = (n))
-
+#if 0
 // this is done just to get this to build
 #define PD1	1
 #define PD2	2
@@ -44,7 +44,17 @@
 #define PC7	7
 #define PB5	5
 #define PB6	6
-
+#endif
+#define PD1	PORTD1
+#define PD2	PORTD2
+#define PD3	PORTD3
+#define PD4	PORTD4
+#define PD6	PORTD6
+#define PD7	PORTD7
+#define PC6	PORTC6
+#define PC7	PORTC7
+#define PB5	PORTB5
+#define PB6	PORTB6
 volatile uint8_t do_output=0;
 uint8_t buffer[64];
 
