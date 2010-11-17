@@ -29,6 +29,8 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
+#include <stdlib.h> /* malloc, free */
+#include <string.h> /* memcpy */
 #include <util/delay.h>
 #include "usb_rawhid.h"
 #include "analog.h"
@@ -44,20 +46,43 @@ uint8_t buffer[RAWHID_RX_SIZE];
  * @buf: buffer from kernel land, packed by
  * ../usb_driver/teensy.c:pack(), of size RAWHID_RX_SIZE
  *
- * WARNING: does not currently copy buf, so don't free or overwrite
- * after unpacking.  This is not an issue in the current single-thread
- * setup.
+ * @return: by value teensy_msg with malloc'd .buf: caller is expected
+ * to FREE.
  */
 struct teensy_msg unpack(uint8_t * buf) {
         struct teensy_msg msg = {
                 .destination = buf[0],
                 .size        = buf[1],
-                .buf         = buf+2,
         };
+        msg.buf = malloc(msg.size * sizeof(uint8_t)); /* pedantry */
+        if (!msg.buf) {
+                /* TODO: fail spectacularly */
+        }
+        memcpy(msg.buf,buf,msg.size);
         return msg;
 }
 
-
+/* pack a teensy_msg for transmission to kernel land; to be inverted
+ * by unpack() in kernel land
+ *
+ * @msg: msg.size must be <= RAWHID_TX_SIZE - 2
+ *
+ * @return: malloc'd buf: caller is expected to FREE.
+ */
+uint8_t * pack(struct teensy_msg msg) {
+        uint8_t * buf = malloc(RAWHID_TX_SIZE);
+        if (!buf) {
+                /* TODO: fail spectacularly */
+        }
+        if (1+1+ msg.size > RAWHID_TX_SIZE) {
+                /* TODO: fail spectacularly */
+        }
+        buf[0] = msg.destination;
+        buf[1] = msg.size;
+        memcpy(buf+2,msg.buf,msg.size);
+        /* leaving garbage in the tail bytes ... */
+        return buf;
+}
 
 int main(void)
 {
