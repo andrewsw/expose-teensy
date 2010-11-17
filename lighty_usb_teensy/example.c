@@ -116,6 +116,10 @@ void handle_adc(struct teensy_msg msg) {
         /* TODO: use onboard light instead */
         power_portd2(500); /* power light for debug */
 
+        if (msg.size < 1) {
+                /* TODO: fail spectacularly */
+        }
+
         msg.size = ADC_READ_SIZE;
         msg.buf = malloc(msg.size); /* caller still knows orig msg.buf */
         if (!msg.buf) {
@@ -128,6 +132,76 @@ void handle_adc(struct teensy_msg msg) {
 				msg.buf[i * 2]     = val >> 8;
 				msg.buf[i * 2 + 1] = val & 0xff;
         }
+        send(msg);
+        free(msg.buf);
+}
+
+void handle_mc(struct teensy_msg msg) {
+        uint8_t speed = msg.buf[0],
+                direction = msg.buf[1]; /* TODO: use this */
+        char reply[] = "( , ) received in handle_mc()\0";
+        reply[1] = speed; reply[3] = direction;
+
+        /* TODO: use onboard light instead */
+        power_portd2(500); /* power light for debug */
+
+        /* validate input */
+        if (msg.size < 1+1) {
+                /* TODO: fail spectacularly */
+        }
+        if (direction != 'f' && direction != 'r') {
+                /* TODO: fail spectacularly */
+        }
+
+        /* TODO: control motors */
+        /*
+				case 'a':		// Motors Fwd, 87.5%
+					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
+					PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
+					OCR1A = 175;
+					OCR1B = 175; 
+					_delay_ms(500);
+					PORTD |= (1<<PORTD6);	
+					PORTC |= (1<<PORTC6);
+					break;
+				case 'b':		// Motors Fwd, 50%
+					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
+					PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
+					OCR1A = 100;
+					OCR1B = 100; 
+					_delay_ms(500);
+					PORTD |= (1<<PORTD6);	
+					PORTC |= (1<<PORTC6);
+					break;
+				case 'c':		// Motors Rev, 50%
+					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
+					PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
+					OCR1A = 100;
+					OCR1B = 100; 
+					_delay_ms(500);
+					PORTD |= (1<<PORTD7);	
+					PORTC |= (1<<PORTC7);
+					break;
+				case 'd':
+					DDRD |= (1<<PORTD1);
+					PORTD |= (1<<PORTD1);
+					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
+					PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
+					OCR1A = 0;
+					OCR1B = 0; 
+					_delay_ms(500);
+					PORTD &= ~(1<<PORTD1);
+					_delay_ms(500);
+					break;
+        */
+
+        msg.size = sizeof(reply);
+        msg.buf = malloc(msg.size); /* caller still knows orig msg.buf */
+        if (!msg.buf) {
+                /* TODO: fail spectacularly */
+        }
+        memcpy(msg.buf,reply,msg.size);
+
         send(msg);
         free(msg.buf);
 }
@@ -201,55 +275,14 @@ int main(void)
 	_delay_ms(500);	*/
             msg = unpack(buffer);
 			switch(msg.destination){
-				case 'a':		// Motors Fwd, 87.5%
-					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
-					PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
-					OCR1A = 175;
-					OCR1B = 175; 
-					_delay_ms(500);
-					PORTD |= (1<<PORTD6);	
-					PORTC |= (1<<PORTC6);
-					break;
-				case 'b':		// Motors Fwd, 50%
-					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
-					PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
-					OCR1A = 100;
-					OCR1B = 100; 
-					_delay_ms(500);
-					PORTD |= (1<<PORTD6);	
-					PORTC |= (1<<PORTC6);
-					break;
-				case 'c':		// Motors Rev, 50%
-					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
-					PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
-					OCR1A = 100;
-					OCR1B = 100; 
-					_delay_ms(500);
-					PORTD |= (1<<PORTD7);	
-					PORTC |= (1<<PORTC7);
-					break;
-				case 'd':
-					DDRD |= (1<<PORTD1);
-					PORTD |= (1<<PORTD1);
-					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
-					PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
-					OCR1A = 0;
-					OCR1B = 0; 
-					_delay_ms(500);
-					PORTD &= ~(1<<PORTD1);
-					_delay_ms(500);
-					break;
-				case 'e':
+            case 'e':
                     handle_adc(msg);
 					break;
-				case 'f':
-					DDRD |= (1<<PORTD3);
-					PORTD |= (1<<PORTD3);
-					_delay_ms(500);
-					PORTD &= ~(1<<PORTD3);
-					_delay_ms(500);
-					break;
-				default:
+            case 'm':
+                    handle_mc(msg);
+                    break;
+            default:
+                    /* TODO: fail spectacularly */
 					break;
 			}
             free(msg.buf);
