@@ -41,7 +41,7 @@ Monolithic module
 
 (see discussion below)
 
-(this is all relative the usb_driver/ dir)
+(THIS IS ALL RELATIVE THE  usb_driver/ DIR)
 
 The monolithic module is called teensy_mono. To make it easy to change
 to modular modules later, the monolithic module implementation is
@@ -52,10 +52,20 @@ broken up into sub-modules.  To create a new submodule:
    etc. functions call into teensy.c as necessary, to actually
    communicate with the teensy.
 
-2. make teensy.c load the M, by calling M_init in teensy_init and
-   M_exit in teensy_exit. you can declare these functions in M.h.
+   see the skeletal-adc-submodule tag for an example skeletal module,
+   or commit fcf80e7 for an entire sstore as submodule.
+
+2. make teensy.c load the M, M_init and M_exit to lists in
+   submodules.c
+
+   see `git diff bc1ec72^ bc1ec72` for an example
 
 3. add M.o to the list of teensy_mono-objs in the Makefile.
+
+   see `git diff aa11bb6^ aa11bb6 Makefile` for an example
+
+4. create module handler code to run in teensy land, and integrate it
+   into the teensy kernel (this hasn't been done yet).
 
 The adc dev is implemented this way by teensy_adc*.
 
