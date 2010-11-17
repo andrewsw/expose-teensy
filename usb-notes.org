@@ -1,0 +1,24 @@
+* usb in lighty
+- usb_rawhid.c:usb_rawhid_recv : takes a buffer to put read data
+  in and a timeout. returns number of bytes read (always
+  RAWHID_RX_SIZE), or error < 0.
+
+- uint8_t : unsigned 8bit int, also def in libc, so hopefully
+  transfer safe ...
+
+- usb_rawhid.c:RAWHID_RX_SIZE : defines RX packet size: 64 bytes
+
+- UEDATX: the magic usb buffer reader/write byte: it's a volatile
+  byte: direct hardware access!
+
+  details:
+
+  - /usr/lib/avr/include/<various architectures>.h: 
+    : #define UEDATX _SFR_MEM8(0XF1)
+
+  - /usr/lib/avr/include/avr/sfr_defs.h: 
+    : #define _SFR_MEM8(mem_addr) _MMIO_BYTE(mem_addr)
+
+  - /usr/lib/avr/include/avr/sfr_defs.h: multiple defs, but
+    presumably ours is
+    : #define _MMIO_BYTE(mem_addr) (*(volatile uint8_t *)(mem_addr))
