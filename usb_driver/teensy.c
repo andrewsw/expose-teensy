@@ -42,7 +42,7 @@ spinlock_t readers_lock;
 
 wait_queue_head_t readers_queue;
 
-
+struct usb_teensy *teensy_dev;
 
 /*
  * teensy_interrupt_in_callback
@@ -131,6 +131,21 @@ reset:
 	
 }
 
+/*
+ * teensy_interrupt_out_callback
+ *
+ * TODO: document
+ *
+ * callback function to handle data coming on from teensy
+ *
+ * note, this runs in interrupt context, play nice!
+ *
+ */
+static void teensy_interrupt_out_callback (struct urb *urb) 
+{
+	DPRINT("interrupt_out callback called\n");
+    usb_free_urb(urb);
+}
 
 /*
  * init_reader
@@ -175,17 +190,24 @@ void init_reader (struct usb_interface *intf)
  */
 int teensy_read(struct read_request *req)
 {
-
+    struct usb_teensy * dev = teensy_dev;
+    struct urb * out_urb;
 	struct read_request* temp;
 	struct list_head *curr;
-	
-	
 	
 	DPRINT("teensy_read()\n");
 	/* check the request for validity (no nullptrs etc) */
 	/* set request completed to FALSE */
 
 	if (!req) return -EINVAL;
+    if (!req->size) {
+      DPRINT("teensy_read(): emtpy req->buf, bailing\n");
+      return -EINVAL;
+    }
+    if (!dev) {
+      DPRINT("teensy_read(): NULL dev, bailing\n");
+      return -EINVAL;
+    }
 
 	DPRINT("req size: %d, t_dev: %x, buffer add: %p\n", req->size, req->t_dev, req->buf);
 		
@@ -206,10 +228,28 @@ int teensy_read(struct read_request *req)
 	/* TODO -- right now teensy just sends data on its own, need
 	 * to implement a protocol for requesting the right kind of
 	 * data */
-	
+
+    /* HACK: overwrites first byte of buf! */
+    req->buf[0] = 'e'; //req->t_dev;
+    DPRINT("teensy_read(): 1 \n");
+	out_urb = usb_alloc_urb(0, GFP_KERNEL);
+    DPRINT("teensy_read(): 2 \n");
+	usb_fill_int_urb (out_urb,
+			  dev->udev,
+			  usb_sndintpipe(dev->udev,
+					 dev->out_endpoint),
+              /* TODO: use new buf with concat of t_dev and buf */
+			  req->buf,
+			  req->size,
+
+			  teensy_interrupt_out_callback, dev,
+			  dev->out_interval);
+    DPRINT("teensy_read(): 3 \n");
+	usb_submit_urb(out_urb, GFP_KERNEL);
+    DPRINT("teensy_read(): 4 \n");	
 	/* wait_event completed == TRUE */
 	wait_event(readers_queue, (req->complete));
-
+    DPRINT("teensy_read(): 5 \n");
 	/* back from blocked read, get the hell off the readers list
 	 * because we'll be freed soon...*/
 	spin_lock(&readers_lock);
@@ -219,14 +259,10 @@ int teensy_read(struct read_request *req)
 	return req->size;
 }
 
-
-	
-
-
 static int probe_teensy (struct usb_interface *intf,
 			 const struct usb_device_id *id) 
 {
-	struct usb_teensy *dev = NULL;
+    struct usb_teensy * dev;
 	struct usb_host_interface *iface_desc;
 	struct usb_endpoint_descriptor *endpoint;
 	int i, result;
@@ -234,7 +270,8 @@ static int probe_teensy (struct usb_interface *intf,
 	DPRINT("connect detected\n");
 
 	/* allocate for our device structure */
-	dev = kmalloc(sizeof(struct usb_teensy), GFP_KERNEL);
+	teensy_dev = kmalloc(sizeof(struct usb_teensy), GFP_KERNEL);
+    dev = teensy_dev;
 	if(!dev) {
 		printk(KERN_ERR "teensy: failed to allocate device memory!\n");
 		return -ENOMEM;
@@ -297,7 +334,7 @@ static int probe_teensy (struct usb_interface *intf,
 			
 			/* this is an output endpoint */
 			dev->out_endpoint = endpoint->bEndpointAddress;
-
+            dev->out_interval = endpoint->bInterval;
 		}
 		
 	}

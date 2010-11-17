@@ -40,6 +40,7 @@ struct usb_teensy {
 	__u8 out_endpoint;                /* the device endpoint for outgoing packets */
 	struct urb *in_urb;               /* our input urb */
 	int in_interval;                  /* the polling interval of the input endpoint */
+	int out_interval;                 /* the polling interval of the output endpoint */
 };
 
 /* 
