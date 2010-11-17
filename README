@@ -30,6 +30,8 @@ Git Cheat Sheet
 * tag a commit, with an annotation: `git tag -a <tag name> <commit> -m <annotation>`
 * look at a file as it existed in a particular commit or tag: e.g. `git show skeletal-adc-submodule:usb_driver/teensy_adc.c`
   note the *full* path usb_driver/teensy_adc.c.
+* stage only part of a file: `git add --patch <some file>`
+  now follow the prompts to add particular changes.
 
 Architecture Implementation (have done)
 =======================================
