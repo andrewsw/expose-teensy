@@ -1,8 +1,12 @@
 # usb_driver module specific makefile
 
-obj-m += teensy.o
+obj-m += teensy_mono.o
+# http://linux.die.net/lkmpg/x351.html
+teensy_mono-objs := teensy.o submodules.o teensy_adc.o 
 
-ifneq "$(shell uname -r | cut -d'-' -f1)" "2.6.24"
+# if kernel version is not 2.6.24 then assume 2.6.24 kernel source is
+# in /root
+ifneq "$(shell uname -r | grep -o '^2\.6\.24')" "2.6.24"
 KERNEL_ENV=$(HOME)/src/linux-2.6.24/
 else
 KERNEL_ENV=/lib/modules/$(shell uname -r)/build

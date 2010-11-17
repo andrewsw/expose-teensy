@@ -1,4 +1,5 @@
-This is a class project for cs572, Fall 2010 at Portland State University.
+CS 572 Class Project, Fall 2010 at Portland State University
+============================================================
 
 The objective is to develop a general purpose driver for the teensy
 micro-controller that exposes a series of abstract character devices
@@ -7,12 +8,61 @@ for a variety of purposes. The idea is that a simple set of ioctls,
 along with reads and writes can provide general purpose functionality
 without fiddly access to the teensy directly.
 
-Architecture Ideas:
+Repository
+==========
+
+Branches
+--------
+
+* master
+* reader: Andrew's teensy_read() branch
+
+Git Cheat Sheet
+---------------
+
+* create and change to local reader branch tracking global reader branch: `git checkout --track -b reader origin/reader`
+* create and change to a local branch (no tracking): `git checkout -b <branch>`
+* change to a different branch: `git checkout <branch>`
+* show list of branches: `git branch -av`
+* make git use color when sensible: `git config --global color.ui auto`
+* merge <branch> with reader: `git checkout reader; git merge <branch>`
+* show a graphical summary of all history and refs: `git log --graph --all --pretty=oneline --decorate --abbrev-commit`
+
+Architecture Implementation (have done)
+=======================================
+
+Monolithic module
+-----------------
+
+(see discussion below)
+
+(this is all relative the usb_driver/ dir)
+
+The monolithic module is called teensy_mono. To make it easy to change
+to modular modules later, the monolithic module implementation is
+broken up into sub-modules.  To create a new submodule:
+
+1. create a separate module, say M, like we learned in class: with
+   M_init and M_exit functions, but whose M_read, M_write,
+   etc. functions call into teensy.c as necessary, to actually
+   communicate with the teensy.
+
+2. make teensy.c load the M, by calling M_init in teensy_init and
+   M_exit in teensy_exit. you can declare these functions in M.h.
+
+3. add M.o to the list of teensy_mono-objs in the Makefile.
+
+The adc dev is implemented this way by teensy_adc*.
+
+Architecture Ideas (might do)
+=============================
 
 Here are some architecture ideas for people to think about:
 
-1. IN Data -- data coming from the device to the host machine -- this
-data could be coming in regularly and driven by the teensy
+IN Data: data coming from the device to the host machine
+--------------------------------------------------------
+
+this data could be coming in regularly and driven by the teensy
 itself. Using the perrenial example of an ADC device, if someone opens
 an ADC device (like /dev/adc0) then they will theoretically begin
 reading at some point. So we should have the teensy begin sending
@@ -30,7 +80,10 @@ resubmitting it. That would look something like this psuedo-code:
 	  f. wakeup an appropriate sleeper to handle the data
 	  g. resubmit the URB and get out of the way.
 
-2. Individual /dev/ devices -- if these are input devices, then they
+Individual /dev/ devices
+------------------------
+
+if these are input devices, then they
 need to have some kind of local buffer to queue data. The URB callback
 from 1. above would have to get a lock on that buffer (I'm guessing an
 array allocated ring buffer), and cram the data in. The device would
@@ -39,3 +92,41 @@ that queue. When it gets awakened, it should chew through the whole
 ring buffer until all the data is pushed out to the user. This will be
 tricky, because we need a user to actually be reading (a blocked
 read() call would be ideal for this). 
+
+Modular modules? (copied from email w/ Subject: Architecture)
+-------------------------------------------------------------
+
+Principally, the question as I see it is: how do we tie together a
+variety of character devices to a single usb-handling backend. Jim has
+expressed an interest in making this extensible as much as possible
+(without jeopardizing the project as an assignment). I think this is
+valuable, and will help with the division of labor within the group.
+
+The idea is to have a variety of "front-ends" that all communicate
+with a backend that marshalls it all and does the actual talking to
+the device. This allows pretty good modularity in that various devices
+can be added without having to muck around too much in the usb
+code. There would just need to be some hooks into the usb code that
+tell it how to identify a packet of the data for that device and where
+to put it. Of course, there would need to be work on the teensy as
+well, but that's a separate issue from what I'm trying to discuss
+here.
+
+I see two basic options for handling this from a 10,000 foot view.
+
+1) Monolithic module -- when the module is inserted (or probed
+perhaps), it sets up the usb backend, does a bunch of other setup and
+exposes all the currently available devices
+
+2) modular modules (heh) -- there is one module that handles the
+backend usb stuff. Then there are other modules that depend on that
+module. When they get inserted they register themselves with the
+backend, perhaps provide some information on how to handle it's data
+(pointers to buffers or handler functions) and then expose their
+devices.
+
+I like 2, but think it might be too complicated for our time
+constraints. If we do 1 I think we should make real efforts to keep it
+modular so that later it could be easily massaged into 2. I think 2 is
+a better long-term solution and creates the kind of extensibility that
+Jim would like to see.

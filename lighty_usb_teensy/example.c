@@ -60,7 +60,7 @@ uint8_t buffer[64];
 
 int main(void)
 {
-	int8_t r;
+	int8_t r, i, val;
 	uint16_t count=0;
 
 	// set for 16 MHz clock
@@ -167,22 +167,22 @@ int main(void)
 		if (do_output) {
 			do_output = 0;
 			// send a packet, first 2 bytes 0xABCD
-			//buffer[0] = 0xAB;
-			//buffer[1] = 0xCD;
-			//buffer[2] = r;
+			buffer[0] = 0xAB;
+			buffer[1] = 0xCD;
+			buffer[2] = r;
  			// put A/D measurements into next 24 bytes
-			//for (i=0; i<12; i++) {
-			//	val = analogRead(i);
-			//	buffer[i * 2 + 2] = val >> 8;
-			//	buffer[i * 2 + 3] = val & 255;
-			//}
+			for (i=0; i<12; i++) {
+				val = analogRead(i);
+				buffer[i * 2 + 2] = val >> 8;
+				buffer[i * 2 + 3] = val & 255;
+			}
 			// most of the packet filled with zero
-			//for (i=26; i<62; i++) {
-				//buffer[i] = 0;
-			//}
+			for (i=26; i<62; i++) {
+				buffer[i] = 0;
+			}
 			//// put a count in the last 2 bytes
-			//buffer[62] = count >> 8;
-			//buffer[63] = count & 255;
+			buffer[62] = count >> 8;
+			buffer[63] = count & 255;
 			// send the packet
 			usb_rawhid_send(buffer, 50);
 			count++;
