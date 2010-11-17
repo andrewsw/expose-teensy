@@ -65,9 +65,50 @@ broken up into sub-modules.  To create a new submodule:
    see `git diff aa11bb6^ aa11bb6 Makefile` for an example
 
 4. create module handler code to run in teensy land, and integrate it
-   into the teensy kernel (this hasn't been done yet).
+   into the teensy kernel (half assed for adc: the handler code is in
+   the main file).
 
 The adc dev is implemented this way by teensy_adc*.
+
+malloc() and free() for msg structs
+-----------------------------------
+
+This is arbitrary in some place, and potentially confusing ... Here's
+how it works right now:
+
+kernel land
+~~~~~~~~~~~
+
+The msg struct is (currently called) read_request.  It has a .buf
+char* of size .size.  Rules are:
+
+- the creator of the struct kmalloc()s .buf, and kfree()s .buf on return
+  from teensy_read(), but teensy read returns a *different* buf in
+  .buf.
+
+- intermediate modifiers of the struct (pack() and unpack()) kfree()
+  the current .buf and kmalloc() a new .buf
+
+So, this may sound a little strange, but is easy to remember: each
+modifier makes exactly one kmalloc() and kfree() call.
+
+hw land
+~~~~~~~
+
+The msg struct is teensy_msg.  It is a .buf uint8_t* of size
+.size. Rules are:
+
+- the creator of the struct, unpack(), malloc()s .buf, and the caller
+  of unpack(), main(), free()s .buf, when the handler() returns.
+
+- the handler() malloc()s a second buf to send() to kernel land, and
+  free()s that buf on return from send()
+
+- meanwhile, send() calls pack(), which malloc()s a buf, which send()
+  then free()s
+
+Here I'm not sure what the simple rule is, but maybe: if you're
+responsible for the malloc(), then you're responsible for the free()?
 
 Architecture Ideas (might do)
 =============================
