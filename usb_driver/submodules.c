@@ -10,11 +10,14 @@
 /* NC: I couldn't figure out how to have these in submodule.h (it's
    included in multiple places), so i moved the defs here */
 #include "teensy_adc.h"
+#include "teensy_mc.h"
 static int (*inits[])(void) = {
   adc_init,
+  mc_init,
 };
 static void (*exits[])(void) = {
   adc_exit,
+  mc_exit,
 };
 
 /*** private ***/
@@ -46,6 +49,8 @@ int init_submodules(void) {
   return 0;
 }
 
+/* MAYBE TODO: should these instead be unloaded in the opposite the
+   order they were loaded ??? */
 void exit_submodules(void) {
   int i;
 
