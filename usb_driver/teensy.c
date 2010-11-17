@@ -50,6 +50,8 @@ struct usb_teensy *teensy_dev;
  *
  * NOT INTERRUPT MODE SAFE!
  *
+ * NOT SAFE TO FREE req->buf IF THIS RETURNS ERROR
+ *
  * @return: < 0 on failure; 0 o/w
  */
 int pack(struct read_request * req) {
@@ -152,7 +154,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 	char packet_id;
 	struct read_request *req = NULL;
 				
-	DPRINT("interrupt_in callback called\n");
+	//DPRINT("interrupt_in callback called\n");
 
 	if (!urb)
 		goto reset;
@@ -171,7 +173,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 	if (urb->actual_length > 0 && dev->in_buf) {
 		
 		/* examine the first byte */
-		packet_id = dev->in_buf[0] & 0x0ff;
+        packet_id = dev->in_buf[0] & 0x0ff; /* TODO: make this a function */
 		
 		/* lock the list!!! */
 		spin_lock(&readers_lock);
@@ -192,7 +194,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 			}
 			
 		} else {
-			DPRINT("no readers! Dropping packet!\n");
+            //DPRINT("no readers! Dropping packet!\n");
 			goto reset;
 			
 		}
@@ -223,7 +225,7 @@ reset:
 	
 	usb_submit_urb(urb, GFP_ATOMIC);
 
-	DPRINT ("in URB RE-submitted\n");
+	//DPRINT ("in URB RE-submitted\n");
 	
 }
 
@@ -288,6 +290,9 @@ void init_reader (struct usb_interface *intf)
  * free req->buf after return; req->buf WILL NOT be the same pointer
  * as was passed! req->buf and req->size are modified and contain the
  * result on return.
+ * 
+ * NOTE: if you have a zero byte payload, then do req->buf =
+ * kmalloc(0,...): this gives a free()able pointer.
  */
 int teensy_read(struct read_request *req)
 {
@@ -301,11 +306,16 @@ int teensy_read(struct read_request *req)
 	/* check the request for validity (no nullptrs etc) */
 	/* set request completed to FALSE */
 
-	if (!req) return -EINVAL;
+	if (!req) {
+      printk(KERN_ERR "teensy_read(): NULL req, bailing\n");
+      return -EINVAL;
+    }
+    /*
     if (!req->size) {
       DPRINT("teensy_read(): emtpy req->buf, bailing\n");
       return -EINVAL;
     }
+    */
     if (!dev) {
       DPRINT("teensy_read(): NULL dev, bailing\n");
       return -EINVAL;
@@ -331,10 +341,10 @@ int teensy_read(struct read_request *req)
 	 * to implement a protocol for requesting the right kind of
 	 * data */
 
-    /* HACK: hardcode destination! */
-    req->t_dev = 'e';
-    if ((ret = pack(req)) < 0)
+    if ((ret = pack(req)) < 0) {
+      printk(KERN_ERR "teensy_read(): pack() failed\n");
       return ret;
+    }
     DPRINT("teensy_read(): 1 \n");
 	out_urb = usb_alloc_urb(0, GFP_KERNEL);
     DPRINT("teensy_read(): 2 \n");
@@ -342,7 +352,7 @@ int teensy_read(struct read_request *req)
 			  dev->udev,
 			  usb_sndintpipe(dev->udev,
 					 dev->out_endpoint),
-              /* TODO: use new buf with concat of t_dev and buf */
+
 			  req->buf,
 			  req->size,
 

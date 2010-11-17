@@ -95,37 +95,44 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
 {
   //struct adc_dev_t * dev = _get_private_data(filp)->adc;
   int ret = 0;
-  char * mybuf = kmalloc(count, GFP_KERNEL);
+  char * mybuf = kmalloc(0, GFP_KERNEL);
   struct read_request req = {
-    .t_dev = 0x0ab, /* set to match the current default data coming back */
+    /* TODO: use correct adc code */
+    .t_dev = 'e', /* set to match the current default data coming back */
     .buf   = mybuf,
-    .size  = count,
+    .size  = 0,
   };
 
   pk("read(): buf=0x%X, count=%d, *pos=0x%X\n", ui buf, count, ui *pos);
 
-  if (mybuf == NULL)
+  if (mybuf == NULL) {
+    pk("adc_read(): no mem when allocing zero bytes\n");
     return -ENOMEM;
+  }
 
   /* pass request to teensy_read() */
+  /* teensy_read() returns a DIFFERENT buf in req->buf, so we must
+     free that; our mybuf was already free'd in teensy_read().
+   */
   ret = teensy_read(&req);
   if (ret < 0) {
-    pk("read(): error calling teensy_read()\n");
-    goto adc_read_cleanup;
+    pk("adc_read(): error calling teensy_read()\n");
+    return ret;
   }
-  if (ret > count) {
-    pk("read(): teeny_read() returned to large\n");
-    goto adc_read_cleanup;
-  }
-  /* copy data to user buf */
-  if (copy_to_user(buf, mybuf, ret)) {
-    ret = -EFAULT;
-    goto adc_read_cleanup;
-  }
+  printk(KERN_DEBUG "adc_read(): read %i bytes from teensy\n", req.size);
 
- adc_read_cleanup:
-  kfree(mybuf);
-  return ret; /* TODO: is it correct to return ret on success? */
+  /* copy data to user buf */
+  ret = req.size < count ? req.size : count; /* min */
+  if (copy_to_user(buf, req.buf, ret)) {
+    ret = -EFAULT;
+    pk("adc_read(): copy_to_user() failed\n");
+    return ret;
+  }
+  printk(KERN_DEBUG "adc_read(): copied %i bytes to userbuf\n", ret);
+
+  kfree(req.buf); /* free the NEW buf */
+
+  return ret;
 }
 
 struct file_operations adc_fops = {

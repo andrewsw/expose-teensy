@@ -92,6 +92,8 @@ int main(void)
 	while (1) {
 		// if received data, do something with it
 		r = usb_rawhid_recv(buffer, 0);
+        // TODO: extract message struct from buf and pass to
+        // appropriate handler()
 		if (r > 0) {
 // PD4 --> Red 1
 // PD6 --> Green 1
@@ -156,23 +158,28 @@ int main(void)
 		// if time to send output, transmit something interesting
 		if (do_output) {
 			do_output = 0;
-			// send a packet, first 2 bytes 0xABCD
-			buffer[0] = 0xAB;
-			buffer[1] = 0xCD;
-			buffer[2] = r;
+            /* TODO: make return code vary with request: this is
+               hardcoded to arbitrary value used by teensy_adc to turn
+               on light */
+			buffer[0] = 'e'; /* destination */
+			buffer[1] = 24; /* size of returned data */
+			//buffer[2] = r; // overwritten in next loop :P
+            // TODO: this goes in buffer[1]: the size field
  			// put A/D measurements into next 24 bytes
 			for (i=0; i<12; i++) {
 				val = analogRead(i);
 				buffer[i * 2 + 2] = val >> 8;
 				buffer[i * 2 + 3] = val & 255;
 			}
-			// most of the packet filled with zero
-			for (i=26; i<62; i++) {
+			// the rest of the packet filled with zero
+			for (i=26; i<64; i++) {
 				buffer[i] = 0;
 			}
+            /*
 			//// put a count in the last 2 bytes
 			buffer[62] = count >> 8;
 			buffer[63] = count & 255;
+            */
 			// send the packet
 			usb_rawhid_send(buffer, 50);
 			count++;
