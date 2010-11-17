@@ -11,6 +11,9 @@
 #define VENDOR_ID        0x16C0
 #define PRODUCT_ID        0x0FFF
 
+/* MUST BE THE SAME AS IN ../lighty_usb_teensy/usb_rawhid.c */
+#define RAWHID_RX_SIZE 64 /* usb buffer packet size */
+
 /* a debug printk */
 #ifdef TEENSY_DEBUG
 #define DPRINT(msg...)  printk(KERN_DEBUG "teensy: " msg)

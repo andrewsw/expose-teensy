@@ -44,6 +44,59 @@ wait_queue_head_t readers_queue;
 
 struct usb_teensy *teensy_dev;
 
+/* data pack/unpack */
+
+/* frees req->buf and allocates new req->buf with packed data
+ *
+ * NOT INTERRUPT MODE SAFE!
+ *
+ * @return: < 0 on failure; 0 o/w
+ */
+int pack(struct read_request * req) {
+    char * packed;
+    /* packed data layout:
+     *
+     * [destination]: 1 byte
+     * [size]:        1 byte // BREAKS if RAWHID_RX_SIZE gets large
+     * [payload]:     N bytes
+     * [padding]:     RAWHID_RX_SIZE - 1 - 1 - N bytes
+     */
+
+    /* validate input */
+    if (req->size + 2 > RAWHID_RX_SIZE
+        || req->size >= 1 << 8) { /* too big for uint_8 */
+      printk(KERN_ERR "pack(): req->size too large: %i\n", req->size);
+      return -EINVAL;
+    }
+
+    packed = kzalloc(RAWHID_RX_SIZE,GFP_KERNEL);
+    if (!packed)
+      return -ENOMEM;
+
+    /* pack data */
+    packed[0] = req->t_dev;
+    packed[1] = (uint8_t) req->size;
+    memcpy(packed+2,req->buf,req->size);
+    /* zalloc already made pad bytes zero */
+
+    /* free old buf; insert new buf and updated size */
+    kfree(req->buf);
+    req->buf = packed;
+    req->size = RAWHID_RX_SIZE;
+
+    return 0;
+}
+
+/* frees req->buf and allocates new req->buf with unpacked data
+ *
+ * INTERRUPT MODE SAFE
+ *
+ * @return: < 0 on failure; 0 o/w
+ */
+int unpack(struct read_request * req) {
+  
+}
+
 /*
  * teensy_interrupt_in_callback
  *
@@ -57,7 +110,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 	struct usb_teensy *dev;
 	int status;
 	int i;
-	char data[65];
+	char data[RAWHID_RX_SIZE+1]; /* TODO: why +1 ??? */
 	struct list_head *curr;
 	char packet_id;
 	struct read_request *req = NULL;
