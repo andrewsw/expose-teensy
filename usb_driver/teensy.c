@@ -147,9 +147,8 @@ static void teensy_interrupt_in_callback (struct urb *urb)
 {
         struct usb_teensy *dev;
         int status;
-        int i;
         int ret;
-        char data[RAWHID_RX_SIZE+1]; /* TODO: why +1 ??? */
+
         struct list_head *curr;
         char packet_id;
         struct read_request *req = NULL;
@@ -299,8 +298,6 @@ int teensy_read(struct read_request *req)
         int ret;
         struct usb_teensy * dev = teensy_dev;
         struct urb * out_urb;
-        struct read_request* temp;
-        struct list_head *curr;
         
         DPRINT("teensy_read()\n");
         /* check the request for validity (no nullptrs etc) */
