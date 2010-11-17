@@ -127,11 +127,41 @@ ssize_t mc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos)
   return ret; /* TODO: is it correct to return ret on success? */
 }
 
+/* MAYBE TODO: would be nicer to use /sys instead of ioctls? */
+int mc_ioctl (struct inode * inode, struct file * filp, unsigned int cmd, unsigned long arg) {
+  int speed;
+  //struct mc_dev_t * dev = _get_private_data(filp)->mc;
+
+  pk("ioctl(): iminor=%d, filp=0x%X, cmd=0x%X, arg=0x%X\n", iminor(inode), ui filp, ui cmd, ui arg);
+
+  speed = (int) arg;
+  switch (cmd) {
+
+  case MC_IOC_STOP:
+    speed = 0;
+    /* fall through */
+
+  case MC_IOC_FWD:
+    /* set speed */
+    break;
+
+  case MC_IOC_REV:
+    /* set speed */
+    break;
+
+  default:
+    return -ENOTTY; /* this is the right error code according to ldd3 :P */
+  }
+  return 0;
+}
+
+
 struct file_operations mc_fops = {
   .owner   = THIS_MODULE,
   .read    = mc_read,
   .open    = mc_open,
   .release = mc_release,
+  .ioctl   = mc_ioctl,
 };
 
 /*** setup/teardown ***/
