@@ -53,6 +53,7 @@ struct class * adc_class;
                                current->pid, current->comm, ##args)
 #define ui (unsigned int)
 
+static struct adc_filp_data * _get_private_data (struct file * filp) __attribute__((unused)); /* prevent "usused" compile warning */
 static struct adc_filp_data * _get_private_data (struct file * filp) {
   return (struct adc_filp_data *)filp->private_data;
 }
