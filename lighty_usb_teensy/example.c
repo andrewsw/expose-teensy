@@ -54,7 +54,7 @@ struct teensy_msg unpack(uint8_t * buf) {
                 .destination = buf[0],
                 .size        = buf[1],
         };
-        msg.buf = malloc(msg.size * sizeof(uint8_t)); /* pedantry */
+        msg.buf = malloc(msg.size);
         if (!msg.buf) {
                 /* TODO: fail spectacularly */
         }
@@ -74,9 +74,11 @@ uint8_t * pack(struct teensy_msg msg) {
         if (!buf) {
                 /* TODO: fail spectacularly */
         }
+
         if (1+1+ msg.size > RAWHID_TX_SIZE) {
                 /* TODO: fail spectacularly */
         }
+
         buf[0] = msg.destination;
         buf[1] = msg.size;
         memcpy(buf+2,msg.buf,msg.size);
@@ -84,10 +86,56 @@ uint8_t * pack(struct teensy_msg msg) {
         return buf;
 }
 
+/* provide power to PORTD2 for time @time ms */
+/* TODO: generalize this to a macro */
+void power_portd2(double time) {
+        DDRD |= (1<<PORTD2);
+        PORTD |= (1<<PORTD2);
+        _delay_ms(time);
+        PORTD &= ~(1<<PORTD2);
+}
+
+/* send @msg to kernel land teensy */
+#define SEND_TIMEOUT 50
+void send(struct teensy_msg msg) {
+        uint8_t * buf = pack(msg);
+        // send the packet
+        usb_rawhid_send(buf, SEND_TIMEOUT);
+        free(buf);
+}
+
+/* handler for adc msgs
+ *
+ * @msg: expects adc pin to read in msg.buf[0]
+ *
+ */
+#define ADC_READ_SIZE 24 /* assumed EVEN */
+void handle_adc(struct teensy_msg msg) {
+        uint8_t i, pin = msg.buf[0]; /* TODO: use this */
+        uint16_t val;
+        /* TODO: use onboard light instead */
+        power_portd2(500); /* power light for debug */
+
+        msg.size = ADC_READ_SIZE;
+        msg.buf = malloc(msg.size); /* caller still knows orig msg.buf */
+        if (!msg.buf) {
+                /* TODO: fail spectacularly */
+        }
+
+        // put A/D measurements into next 24 bytes
+        for (i=0; i<ADC_READ_SIZE/2; i++) {
+				val = analogRead(i);
+				msg.buf[i * 2]     = val >> 8;
+				msg.buf[i * 2 + 1] = val & 0xff;
+        }
+        send(msg);
+        free(msg.buf);
+}
+
 int main(void)
 {
-    int8_t r, i, val;
-	uint16_t count=0;
+    int8_t r, i;
+    struct teensy_msg msg;
 
 	// set for 16 MHz clock
 	CPU_PRESCALE(0);
@@ -151,7 +199,8 @@ int main(void)
 	_delay_ms(500);
 	PORTD &= ~(1<<PORTD3);
 	_delay_ms(500);	*/
-			switch(buffer[0]){
+            msg = unpack(buffer);
+			switch(msg.destination){
 				case 'a':		// Motors Fwd, 87.5%
 					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
 					PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
@@ -191,12 +240,7 @@ int main(void)
 					_delay_ms(500);
 					break;
 				case 'e':
-					DDRD |= (1<<PORTD2);
-					PORTD |= (1<<PORTD2);
-					_delay_ms(500);
-					PORTD &= ~(1<<PORTD2);
-					_delay_ms(500);
-					do_output = 1;		// tell the ADCs to sample
+                    handle_adc(msg);
 					break;
 				case 'f':
 					DDRD |= (1<<PORTD3);
@@ -208,35 +252,8 @@ int main(void)
 				default:
 					break;
 			}
-		}
-		// if time to send output, transmit something interesting
-		if (do_output) {
-			do_output = 0;
-            /* TODO: make return code vary with request: this is
-               hardcoded to arbitrary value used by teensy_adc to turn
-               on light */
-			buffer[0] = 'e'; /* destination */
-			buffer[1] = 24; /* size of returned data */
-			//buffer[2] = r; // overwritten in next loop :P
-            // TODO: this goes in buffer[1]: the size field
- 			// put A/D measurements into next 24 bytes
-			for (i=0; i<12; i++) {
-				val = analogRead(i);
-				buffer[i * 2 + 2] = val >> 8;
-				buffer[i * 2 + 3] = val & 255;
-			}
-			// the rest of the packet filled with zero
-			for (i=26; i<64; i++) {
-				buffer[i] = 0;
-			}
-            /*
-			//// put a count in the last 2 bytes
-			buffer[62] = count >> 8;
-			buffer[63] = count & 255;
-            */
-			// send the packet
-			usb_rawhid_send(buffer, 50);
-			count++;
+            free(msg.buf);
+            _delay_ms(50);
 		}
 	}
 }
