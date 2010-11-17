@@ -21,6 +21,9 @@ test: $(TEST_TRGTS)
 DRIVER:
 	cd ./usb_driver; $(MAKE) $(CMD)
 
+userland_mc: userland_mc.c
+	gcc-4.2 -g $< -o $@
+
 load:
 	insmod usb_driver/teensy_mono.ko
 
