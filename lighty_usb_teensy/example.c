@@ -73,12 +73,22 @@ int main(void)
 	PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// take low to start (off)
 	PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
 
+// Timer 0 is not necessary - leave code in case we later want it.
         // Configure timer 0 to generate a timer overflow interrupt every
         // 256*1024 clock cycles, or approx 61 Hz when using 16 MHz clock
-        TCCR0A = 0x00;
-        TCCR0B = 0x05;
-        TIMSK0 = (1<<TOIE0);
+//        TCCR0A = 0x00;
+//        TCCR0B = 0x05;
+ //       TIMSK0 = (1<<TOIE0);
+// give a blink at the start
+// Loop for debug
+//while (1){
 
+	DDRD |= (1<<PORTD3);
+	PORTD |= (1<<PORTD3);
+	_delay_ms(500);
+	PORTD &= ~(1<<PORTD3);
+	_delay_ms(500);
+//}
 	while (1) {
 		// if received data, do something with it
 		r = usb_rawhid_recv(buffer, 0);
@@ -88,6 +98,13 @@ int main(void)
 // PD4 --> Red 1
 // PD6 --> Green 1
 // PD7 --> Blue 1
+// give a blink on packet received - uncomment for debug
+/*
+	DDRD |= (1<<PORTD3);
+	PORTD |= (1<<PORTD3);
+	_delay_ms(500);
+	PORTD &= ~(1<<PORTD3);
+	_delay_ms(500);	*/
 			switch(buffer[0]){
 				case 'a':		// Motors Fwd, 87.5%
 					PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
@@ -179,7 +196,7 @@ int main(void)
 }
 
 // This interrupt routine is run approx 61 times per second.
-
+/*  Note used currently
 ISR(TIMER0_OVF_vect)
 {
 	static uint8_t count=0;
@@ -187,7 +204,7 @@ ISR(TIMER0_OVF_vect)
 	// set the do_output variable every 2 seconds
 	if (++count > 122) {
 		count = 0;
-		do_output = 1;
+		//do_output = 1;
 	}
-}
+}*/
 
