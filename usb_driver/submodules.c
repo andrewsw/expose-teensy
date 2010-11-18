@@ -1,22 +1,6 @@
 #include "submodules.h"
 #include <linux/module.h> /* printk */
 
-/*** submodules: EDIT HERE TO ADD SUBMODULE ***/
-/* to add a submodule: 
-   1. include headers here
-   2. add init and exit to arrays here
-   3. add the <your_submodule>.o to teensy_mono-objs in the Makefile 
-*/
-/* NC: I couldn't figure out how to have these in submodule.h (it's
-   included in multiple places), so i moved the defs here */
-#include "teensy_adc.h"
-static int (*inits[])(void) = {
-  adc_init,
-};
-static void (*exits[])(void) = {
-  adc_exit,
-};
-
 /*** private ***/
 
 static int loaded = 0;
@@ -46,6 +30,8 @@ int init_submodules(void) {
   return 0;
 }
 
+/* MAYBE TODO: should these instead be unloaded in the opposite the
+   order they were loaded ??? */
 void exit_submodules(void) {
   int i;
 
