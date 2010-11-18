@@ -13,12 +13,12 @@
 #include "teensy_adc.h"
 #include "teensy_mc.h"
 static int  (*inits[])(void) __attribute__((unused)) = {
-  adc_init,
-  mc_init,
+        adc_init,
+        mc_init,
 };
 static void (*exits[])(void) __attribute__((unused)) = {
-  adc_exit,
-  mc_exit,
+        adc_exit,
+        mc_exit,
 };
 
 /* call all inits/exits */

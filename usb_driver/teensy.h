@@ -35,15 +35,15 @@ MODULE_LICENSE("GPL");
  */
 
 struct usb_teensy {
-	struct usb_device *udev;          /* the usb device for this device */
-	struct usb_interface *interface;  /* the interface for this device */
-	unsigned char *in_buf;            /* the buffer for receiving data */
-	size_t in_size;                   /* the size of the buffer */
-	__u8 in_endpoint;                 /* the device endpoint for incoming packets */
-	__u8 out_endpoint;                /* the device endpoint for outgoing packets */
-	struct urb *in_urb;               /* our input urb */
-	int in_interval;                  /* the polling interval of the input endpoint */
-	int out_interval;                 /* the polling interval of the output endpoint */
+        struct usb_device *udev;          /* the usb device for this device */
+        struct usb_interface *interface;  /* the interface for this device */
+        unsigned char *in_buf;            /* the buffer for receiving data */
+        size_t in_size;                   /* the size of the buffer */
+        __u8 in_endpoint;                 /* the device endpoint for incoming packets */
+        __u8 out_endpoint;                /* the device endpoint for outgoing packets */
+        struct urb *in_urb;               /* our input urb */
+        int in_interval;                  /* the polling interval of the input endpoint */
+        int out_interval;                 /* the polling interval of the output endpoint */
 };
 
 /* 
@@ -59,12 +59,12 @@ struct usb_teensy {
  */
 struct read_request {
 
-	struct list_head list; /* we're a linked list */
-	char t_dev;            /* teensy device */
-	char *buf;             /* buffer to store the read data in */
-	size_t size;           /* the size of the request */
-	bool complete;         /* the status of the request */
-	
+        struct list_head list; /* we're a linked list */
+        char t_dev;            /* teensy device */
+        char *buf;             /* buffer to store the read data in */
+        size_t size;           /* the size of the request */
+        bool complete;         /* the status of the request */
+        
 };
 int teensy_read(struct read_request *);
 
