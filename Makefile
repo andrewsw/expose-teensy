@@ -2,7 +2,7 @@
 # general project wide makefile
 #
 
-TRGTS = DRIVER
+TRGTS = DRIVER userland_mc teensy_usb_hw/example.hex
 SYNTAX_TRGTS = DRIVER
 TEST_TRGTS = 
 
@@ -24,10 +24,10 @@ DRIVER:
 userland_mc: userland_mc.c
 	$(CC) -g $< -o $@
 
-teensy_usb_hw/example.hex:
+teensy_usb_hw/example.hex: teensy_usb_hw/example.c
 	cd teensy_usb_hw && make
 
-# you are NOT expected to compile teensy_loader_cli; just use the precompiled version
+# you are NOT expected to compile teensy_loader_cli; use the precompiled version
 load-hw: teensy_usb_hw/example.hex
 	teensy_loader/teensy_loader_cli -mmcu=atmega32u4 -w -v teensy_usb_hw/example.hex
 
