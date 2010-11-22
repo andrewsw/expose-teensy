@@ -275,7 +275,7 @@ int main(void)
 	_delay_ms(500);	*/
             msg = unpack(buffer);
 			switch(msg.destination){
-            case 'e':
+            case 'a':
                     handle_adc(msg);
 					break;
             case 'm':
