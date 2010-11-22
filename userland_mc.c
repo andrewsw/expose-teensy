@@ -14,7 +14,7 @@
 
 #include "usb_driver/teensy_mc.h"
 
-#define DEBUG(x...) fprintf(stderr, x)
+#define DEBUG(x...) /* fprintf(stderr, x) */
 
 void usage(char * argv0) {
   fprintf(stderr, "usage: %s MC SPEED DIRECTION \n\n"
@@ -54,7 +54,8 @@ int main(int argc, char ** argv) {
         DEBUG("mc file is %s\n", mc_file);
         fd = open(mc_file, O_WRONLY);
         if (fd < 0) {
-                perror("error in open(mc_file)");
+                fprintf(stderr, "open(%s): ", mc_file);
+                perror(NULL);
                 exit(errno);
         }
 
@@ -70,7 +71,7 @@ int main(int argc, char ** argv) {
                 break;
         }
         if (ioctl(fd, ioc, speed) < 0) {
-                perror("mc: ioctl error");
+                perror("ioctl error");
                 exit(errno);
         }
 }

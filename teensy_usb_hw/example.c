@@ -140,7 +140,7 @@ void handle_mc(struct teensy_msg msg) {
         uint8_t speed     = msg.buf[0],
                 direction = msg.buf[1]; /* TODO: use this */
         char reply[] = "( , ) received in handle_mc()";
-        reply[1] = speed; reply[3] = direction;
+        reply[1] = '0'+speed; reply[3] = direction;
 
         /* TODO: use onboard light instead */
         power_portd2(500); /* power light for debug */
