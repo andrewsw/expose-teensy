@@ -10,8 +10,11 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "usb_driver/teensy_mc.h"
+
+#define DEBUG(x...) fprintf(stderr, x)
 
 void usage(char * argv0) {
   fprintf(stderr, "usage: %s MC SPEED DIRECTION \n\n"
@@ -24,22 +27,36 @@ void usage(char * argv0) {
 
 int main(int argc, char ** argv) {
         int speed, fd, ioc;
-        char mc, direction, *mc_file;
+        char mc, direction, mc_file[] = "/dev/mc?";
+
+        if (argc >= 4)
+                DEBUG("v0=%s, v1=%s, v2=%s, v3=%s\n", argv[0], argv[1], argv[2], argv[3]);
+
+        if (argc >= 4) {
+                mc = argv[1][0];
+                direction = argv[3][0];
+        }
 
         /* check args and init vars */
         if (argc != 4 ||
-            sscanf(argv[1], "%c", &mc) != 1 ||
             /* (! (mc == 0 || mc == 1)) || */
             sscanf(argv[2], "%i", &speed)  != 1 ||
-            (speed < 0 || 255 < speed) || 
-            sscanf(argv[3], "%c", &direction)  != 1 ||
+            (speed < 0 || 255 < speed) ||
             (direction != 'f' && direction != 's' && direction != 'r'))
           usage(argv[0]);
 
-        /* HACK */
-        mc_file = "/dev/mc?";
+        DEBUG("mc=%c, speed=%i, direction=%c\n", mc, speed, direction);
+
+        /* HACK: choose mc dev */
+        //mc_file = "/dev/mc?";
+        DEBUG("mc file is %s\n", mc_file);
         mc_file[7] = mc;
+        DEBUG("mc file is %s\n", mc_file);
         fd = open(mc_file, O_WRONLY);
+        if (fd < 0) {
+                perror("error in open(mc_file)");
+                exit(errno);
+        }
 
         switch (direction) {
         case 's':
@@ -54,6 +71,6 @@ int main(int argc, char ** argv) {
         }
         if (ioctl(fd, ioc, speed) < 0) {
                 perror("mc: ioctl error");
-                exit(1);
+                exit(errno);
         }
 }

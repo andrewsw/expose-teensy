@@ -318,7 +318,7 @@ int teensy_read(struct read_request *req)
                 return -EINVAL;
         }
 
-        DPRINT("req size: %d, t_dev: %x, buffer add: %p\n", req->size, req->t_dev, req->buf);
+        DPRINT("req size: %d, t_dev: %c, buffer add: %p\n", req->size, req->t_dev, req->buf);
                 
         req->complete = false;
         

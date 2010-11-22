@@ -58,7 +58,7 @@ struct teensy_msg unpack(uint8_t * buf) {
         if (!msg.buf) {
                 /* TODO: fail spectacularly */
         }
-        memcpy(msg.buf,buf,msg.size);
+        memcpy(msg.buf,buf+1+1,msg.size);
         return msg;
 }
 
@@ -81,7 +81,7 @@ uint8_t * pack(struct teensy_msg msg) {
 
         buf[0] = msg.destination;
         buf[1] = msg.size;
-        memcpy(buf+2,msg.buf,msg.size);
+        memcpy(buf+1+1,msg.buf,msg.size);
         /* leaving garbage in the tail bytes ... */
         return buf;
 }
@@ -137,9 +137,9 @@ void handle_adc(struct teensy_msg msg) {
 }
 
 void handle_mc(struct teensy_msg msg) {
-        uint8_t speed = msg.buf[0],
+        uint8_t speed     = msg.buf[0],
                 direction = msg.buf[1]; /* TODO: use this */
-        char reply[] = "( , ) received in handle_mc()\0";
+        char reply[] = "( , ) received in handle_mc()";
         reply[1] = speed; reply[3] = direction;
 
         /* TODO: use onboard light instead */
@@ -208,7 +208,7 @@ void handle_mc(struct teensy_msg msg) {
 
 int main(void)
 {
-    int8_t r, i;
+        int8_t r;
     struct teensy_msg msg;
 
 	// set for 16 MHz clock

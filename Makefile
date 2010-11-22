@@ -22,7 +22,14 @@ DRIVER:
 	cd ./usb_driver; $(MAKE) $(CMD)
 
 userland_mc: userland_mc.c
-	gcc-4.2 -g $< -o $@
+	$(CC) -g $< -o $@
+
+teensy_usb_hw/example.hex:
+	cd teensy_usb_hw && make
+
+# you are NOT expected to compile teensy_loader_cli; just use the precompiled version
+load-hw: teensy_usb_hw/example.hex
+	teensy_loader/teensy_loader_cli -mmcu=atmega32u4 -w -v teensy_usb_hw/example.hex
 
 load:
 	insmod usb_driver/teensy_mono.ko
