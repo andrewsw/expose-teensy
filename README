@@ -33,6 +33,7 @@ Git Cheat Sheet
 * stage only part of a file: `git add --patch <some file>`
   now follow the prompts to add particular changes.
 * delete a remote branch: `git push origin :<branch to delete>`
+* view the *staged* changes: `git diff --cached`
 
 Architecture Implementation (have done)
 =======================================
