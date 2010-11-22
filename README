@@ -32,6 +32,7 @@ Git Cheat Sheet
   note the *full* path usb_driver/teensy_adc.c.
 * stage only part of a file: `git add --patch <some file>`
   now follow the prompts to add particular changes.
+* delete a remote branch: `git push origin :<branch to delete>`
 
 Architecture Implementation (have done)
 =======================================
