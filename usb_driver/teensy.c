@@ -80,7 +80,7 @@ int pack(struct read_request * req) {
                 return -ENOMEM;
 
         /* pack data */
-        packed[0] = req->t_dev;
+        packed[0] = req->packet_id;
         packed[1] = 0x00;          /* for future use */
         packed[2] = (uint8_t) req->size;
         memcpy(packed+2+1,req->buf,req->size);
@@ -118,9 +118,9 @@ int unpack(struct read_request * req) {
                 return -EINVAL;
         }
         /* does buf correspond to req ? */
-        if (req->buf[0] != req->t_dev) {
+        if (req->buf[0] != req->packet_id) {
                 printk(KERN_ERR "unpack(): req->buf not for req->dev_t: %c != %c\n",
-                       req->buf[0], req->t_dev);
+                       req->buf[0], req->packet_id);
                 return -EINVAL;
         }
 
@@ -189,7 +189,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
                                 
                                 struct read_request *temp = list_entry(curr, struct read_request, list);
                                 if (temp) {
-                                        if (temp->t_dev == packet_id && !temp->complete) {
+                                        if (temp->packet_id == packet_id && !temp->complete) {
                                                 req = temp;
                                                 break;
                                         }
@@ -323,11 +323,11 @@ int teensy_read(struct read_request *req)
                 return -EINVAL;
         }
 
-        DPRINT("req size: %d, t_dev: %c, buffer add: %p\n", req->size, req->t_dev, req->buf);
+        DPRINT("req size: %d, packet_id: %c, buffer add: %p\n", req->size, req->packet_id, req->buf);
 
         /* complete the setup of the request */
         spin_lock(&pkt_id_lock);
-        req->t_dev = pkt_id++;     /* we let overflow just happen.... */
+        req->packet_id = pkt_id++;     /* we let overflow just happen.... */
         spin_unlock(&pkt_id_lock);
 
         req->complete = false;
