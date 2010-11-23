@@ -95,11 +95,10 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
 {
         //struct adc_dev_t * dev = _get_private_data(filp)->adc;
         int ret = 0;
-        char * mybuf = kmalloc(0, GFP_KERNEL);
+        char * mybuf = kmalloc(1, GFP_KERNEL);
         struct read_request req = {
-                .t_dev = 'a',
                 .buf   = mybuf,
-                .size  = 0,
+                .size  = 1,
         };
 
         pk("read(): buf=0x%X, count=%d, *pos=0x%X\n", ui buf, count, ui *pos);
@@ -109,6 +108,8 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
                 return -ENOMEM;
         }
 
+        req.buf[0] = 'a';
+        
         /* pass request to teensy_read() */
         /* teensy_read() returns a DIFFERENT buf in req->buf, so we must
            free that; our mybuf was already free'd in teensy_read().

@@ -93,19 +93,21 @@ int mc_ioctl (struct inode * inode, struct file * filp, unsigned int cmd, unsign
         /* send msg */
         /* buf format is
          *
+         * [device]    : 1 byte 
          * [speed]     : 1 byte
          * [direction] : 1 byte
          */
         int ret = 0;
         struct read_request req = {
                 /* TODO: use correct adc code */
-                .t_dev = 'm',
-                .buf   = kmalloc(1+1, GFP_KERNEL),
-                .size  = 1+1,
+                .buf   = kmalloc(1+1+1, GFP_KERNEL),
+                .size  = 1+1+1,
         };
 
         pk("mc_ioctl(): iminor=%d, filp=0x%X, cmd=0x%X, arg=0x%X\n",
            iminor(inode), ui filp, ui cmd, ui arg);
+
+        
 
         if (req.buf == NULL) {
                 pk("mc_ioctl(): no mem when allocing zero bytes\n");
@@ -135,8 +137,9 @@ int mc_ioctl (struct inode * inode, struct file * filp, unsigned int cmd, unsign
         }
 
         /* pack msg */
-        req.buf[0] = speed;
-        req.buf[1] = direction;
+        req.buf[0] = 'm';
+        req.buf[1] = speed;
+        req.buf[2] = direction;
 
         /* pass request to teensy_read() */
         /* teensy_read() returns a DIFFERENT buf in req->buf, so we must
