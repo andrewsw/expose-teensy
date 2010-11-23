@@ -44,6 +44,10 @@ wait_queue_head_t readers_queue;
 
 struct usb_teensy *teensy_dev;
 
+/* packet id number and lock*/
+uint8_t pkt_id;
+spinlock_t pkt_id_lock;
+
 /* data pack/unpack */
 
 /* frees req->buf and allocates new req->buf with packed data
@@ -58,14 +62,14 @@ int pack(struct read_request * req) {
         char * packed;
         /* packed data layout:
          *
-         * [destination]: 1 byte
+         * [packet_id]:   2 bytes
          * [size]:        1 byte // BREAKS if RAWHID_RX_SIZE gets large
          * [payload]:     N bytes
-         * [padding]:     RAWHID_RX_SIZE - 1 - 1 - N bytes
+         * [padding]:     RAWHID_RX_SIZE - 2 - 1 - N bytes
          */
 
         /* validate input */
-        if (req->size + 1+1 > RAWHID_RX_SIZE
+        if (req->size + 2+1 > RAWHID_RX_SIZE
             || req->size >= 1 << 8) { /* too big for uint_8 */
                 printk(KERN_ERR "pack(): req->size too large: %i\n", req->size);
                 return -EINVAL;
@@ -77,8 +81,9 @@ int pack(struct read_request * req) {
 
         /* pack data */
         packed[0] = req->t_dev;
-        packed[1] = (uint8_t) req->size;
-        memcpy(packed+1+1,req->buf,req->size);
+        packed[1] = 0x00;          /* for future use */
+        packed[2] = (uint8_t) req->size;
+        memcpy(packed+2+1,req->buf,req->size);
         /* zalloc already made pad bytes zero */
 
         /* free old buf; insert new buf and updated size */
@@ -120,7 +125,7 @@ int unpack(struct read_request * req) {
         }
 
         /* unpack data */
-        size = (uint8_t) req->buf[1];
+        size = (uint8_t) req->buf[2];
         printk(KERN_DEBUG "unpack(): coded rx packet size is: %i\n", size);
         unpacked = kzalloc(size, GFP_ATOMIC);
         if (!unpacked)
@@ -319,7 +324,12 @@ int teensy_read(struct read_request *req)
         }
 
         DPRINT("req size: %d, t_dev: %c, buffer add: %p\n", req->size, req->t_dev, req->buf);
-                
+
+        /* complete the setup of the request */
+        spin_lock(&pkt_id_lock);
+        req->t_dev = pkt_id++;     /* we let overflow just happen.... */
+        spin_unlock(&pkt_id_lock);
+
         req->complete = false;
         
         /* LOCK the LIST!! */
@@ -469,6 +479,9 @@ static int probe_teensy (struct usb_interface *intf,
         /* additional setup stuff */
         spin_lock_init (&readers_lock);
         init_waitqueue_head(&readers_queue);
+        pkt_id = 0;
+        spin_lock_init (&pkt_id_lock);
+        
         
         /* sub-module-specific init */
         result = init_submodules();
