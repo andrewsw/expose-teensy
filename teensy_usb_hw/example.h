@@ -1,7 +1,7 @@
 #ifndef __EXAMPLE_H__
 #define __EXAMPLE_H__
 
-/* unpacked request struct; analogous to struct read_request in
+/* unpacked request struct; analogous to struct teensy_request in
  * ../usb_driver/teensy.h */
 struct teensy_msg {
         uint8_t packet_id; /* packet_id in kernel land version */

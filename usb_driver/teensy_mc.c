@@ -98,7 +98,7 @@ int mc_ioctl (struct inode * inode, struct file * filp, unsigned int cmd, unsign
          * [direction] : 1 byte
          */
         int ret = 0;
-        struct read_request req = {
+        struct teensy_request req = {
                 /* TODO: use correct adc code */
                 .buf   = kmalloc(1+1+1, GFP_KERNEL),
                 .size  = 1+1+1,
@@ -141,13 +141,13 @@ int mc_ioctl (struct inode * inode, struct file * filp, unsigned int cmd, unsign
         req.buf[1] = speed;
         req.buf[2] = direction;
 
-        /* pass request to teensy_read() */
-        /* teensy_read() returns a DIFFERENT buf in req->buf, so we must
-           free that; our mybuf was already free'd in teensy_read().
+        /* pass request to teensy_send() */
+        /* teensy_send() returns a DIFFERENT buf in req->buf, so we must
+           free that; our mybuf was already free'd in teensy_send().
         */
-        ret = teensy_read(&req);
+        ret = teensy_send(&req);
         if (ret < 0) {
-                pk("mc_ioctl(): error calling teensy_read()\n");
+                pk("mc_ioctl(): error calling teensy_send()\n");
                 return ret;
         }
 

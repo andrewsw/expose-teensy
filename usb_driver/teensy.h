@@ -49,7 +49,7 @@ struct usb_teensy {
 /* 
  * Andrew says:
  *   I've pushed a branch called "readers" that has the code I'm working on
- *   for the read operation. Look in teensy.h for a struct read_request
+ *   for the read operation. Look in teensy.h for a struct teensy_request
  *   object. It is not actually used yet, but contains what I think I need
  *   to make it work. the client code should populate the packet_id field with
  *   a device number (to be determined still), the *buf field with the
@@ -57,7 +57,7 @@ struct usb_teensy {
  *   of the buffer (or of the data desired, less than buffer size,
  *   obviously). Ignore the other fields, they're used internally.
  */
-struct read_request {
+struct teensy_request {
 
         struct list_head list; /* we're a linked list */
         char packet_id;        /* packet id for this request */
@@ -66,6 +66,6 @@ struct read_request {
         bool complete;         /* the status of the request */
         
 };
-int teensy_read(struct read_request *);
+int teensy_send(struct teensy_request *);
 
 #endif /* TEENSY_H */

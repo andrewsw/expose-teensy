@@ -96,7 +96,7 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
         //struct adc_dev_t * dev = _get_private_data(filp)->adc;
         int ret = 0;
         char * mybuf = kmalloc(1, GFP_KERNEL);
-        struct read_request req = {
+        struct teensy_request req = {
                 .buf   = mybuf,
                 .size  = 1,
         };
@@ -110,13 +110,13 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
 
         req.buf[0] = 'a';
         
-        /* pass request to teensy_read() */
-        /* teensy_read() returns a DIFFERENT buf in req->buf, so we must
-           free that; our mybuf was already free'd in teensy_read().
+        /* pass request to teensy_send() */
+        /* teensy_send() returns a DIFFERENT buf in req->buf, so we must
+           free that; our mybuf was already free'd in teensy_send().
         */
-        ret = teensy_read(&req);
+        ret = teensy_send(&req);
         if (ret < 0) {
-                pk("adc_read(): error calling teensy_read()\n");
+                pk("adc_read(): error calling teensy_send()\n");
                 return ret;
         }
         printk(KERN_DEBUG "adc_read(): read %i bytes from teensy\n", req.size);
