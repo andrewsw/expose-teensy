@@ -117,7 +117,7 @@ int mc_ioctl (struct inode * inode, struct file * filp, unsigned int cmd, unsign
         switch (cmd) {
 
         case MC_IOC_STOP:
-                direction = 'f'; /* arbitrary */
+                direction = 's'; /* arbitrary */
                 speed = 0;
                 break;
 
