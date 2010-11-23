@@ -64,7 +64,7 @@ int adc_open (struct inode *inode, struct file *filp) {
         struct adc_filp_data * data;
         struct adc_dev_t * dev;
 
-        pk("open(): iminor=%d, filp=0x%X\n", iminor(inode), ui filp);
+        pk("open(): iminor=%d, filp=%p\n", iminor(inode), filp);
   
         /* filp->private_data */
         dev = &adc_devs[iminor(inode)];
@@ -80,7 +80,7 @@ int adc_open (struct inode *inode, struct file *filp) {
 int adc_release (struct inode * inode, struct file * filp) {
         //struct adc_dev_t * dev = _get_private_data(filp)->adc;
 
-        pk("release(): iminor=%d, filp=0x%X\n", iminor(inode), ui filp);
+        pk("release(): iminor=%d, filp=%p\n", iminor(inode), filp);
 
         kfree(filp->private_data);
         return 0;
@@ -101,7 +101,7 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
                 .size  = 1,
         };
 
-        pk("read(): buf=0x%X, count=%d, *pos=0x%X\n", ui buf, count, ui *pos);
+        pk("read(): buf=%p, count=%zu, *pos=0x%X\n",  buf, count, ui *pos);
 
         if (mybuf == NULL) {
                 pk("adc_read(): no mem when allocing zero bytes\n");
@@ -119,7 +119,7 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
                 pk("adc_read(): error calling teensy_send()\n");
                 return ret;
         }
-        printk(KERN_DEBUG "adc_read(): read %i bytes from teensy\n", req.size);
+        printk(KERN_DEBUG "adc_read(): read %zu bytes from teensy\n", req.size);
 
         /* copy data to user buf */
         ret = req.size < count ? req.size : count; /* min */

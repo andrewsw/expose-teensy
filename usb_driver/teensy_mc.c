@@ -64,7 +64,7 @@ int mc_open (struct inode *inode, struct file *filp) {
         struct mc_filp_data * data;
         struct mc_dev_t * dev;
 
-        pk("open(): iminor=%d, filp=0x%X\n", iminor(inode), ui filp);
+        pk("open(): iminor=%d, filp=%p\n", iminor(inode), filp);
   
         /* filp->private_data */
         dev = &mc_devs[iminor(inode)];
@@ -80,7 +80,7 @@ int mc_open (struct inode *inode, struct file *filp) {
 int mc_release (struct inode * inode, struct file * filp) {
         //struct mc_dev_t * dev = _get_private_data(filp)->mc;
 
-        pk("release(): iminor=%d, filp=0x%X\n", iminor(inode), ui filp);
+        pk("release(): iminor=%d, filp=%p\n", iminor(inode), filp);
 
         kfree(filp->private_data);
         return 0;
@@ -104,8 +104,8 @@ int mc_ioctl (struct inode * inode, struct file * filp, unsigned int cmd, unsign
                 .size  = 1+1+1,
         };
 
-        pk("mc_ioctl(): iminor=%d, filp=0x%X, cmd=0x%X, arg=0x%X\n",
-           iminor(inode), ui filp, ui cmd, ui arg);
+        pk("mc_ioctl(): iminor=%d, filp=%p, cmd=0x%X, arg=0x%X\n",
+           iminor(inode), filp, ui cmd, ui arg);
 
         
 
@@ -154,7 +154,7 @@ int mc_ioctl (struct inode * inode, struct file * filp, unsigned int cmd, unsign
         /* force string */
         if (req.size > 0)
                 req.buf[req.size-1] = '\0';
-        printk(KERN_DEBUG "mc_ioctl(): read %i bytes [%s] from teensy\n",
+        printk(KERN_DEBUG "mc_ioctl(): read %zu bytes [%s] from teensy\n",
                req.size, req.buf);
 
         kfree(req.buf); /* free the NEW buf */
