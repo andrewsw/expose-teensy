@@ -158,7 +158,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
         char packet_id;
         struct teensy_request *req = NULL;
                                 
-        //DPRINT("interrupt_in callback called\n");
+        DPRINT("interrupt_in callback called\n");
 
         if (!urb)
                 goto reset;
@@ -178,6 +178,9 @@ static void teensy_interrupt_in_callback (struct urb *urb)
                 
                 /* examine the first byte */
                 packet_id = dev->in_buf[0] & 0x0ff; /* TODO: make this a function */
+
+                DPRINT("in-callback got packet_id: %i\n", packet_id);
+                
                 
                 /* lock the list!!! */
                 spin_lock(&readers_lock);
@@ -229,7 +232,7 @@ reset:
         
         usb_submit_urb(urb, GFP_ATOMIC);
 
-        //DPRINT ("in URB RE-submitted\n");
+        DPRINT ("in URB RE-submitted\n");
         
 }
 
@@ -323,7 +326,6 @@ int teensy_send(struct teensy_request *req)
                 return -EINVAL;
         }
 
-        DPRINT("req size: %zu, packet_id: %c, buffer add: %p\n", req->size, req->packet_id, req->buf);
 
         /* complete the setup of the request */
         spin_lock(&pkt_id_lock);
@@ -331,7 +333,9 @@ int teensy_send(struct teensy_request *req)
         spin_unlock(&pkt_id_lock);
 
         req->complete = false;
-        
+
+        DPRINT("req size: %zu, packet_id: %c, buffer add: %p\n", req->size, req->packet_id, req->buf);
+
         /* LOCK the LIST!! */
         spin_lock(&readers_lock);
 
