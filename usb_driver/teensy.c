@@ -185,7 +185,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
                 /* lock the list!!! */
                 spin_lock(&senders_lock);
 
-                /* search readers list for match, if no match, just
+                /* search senders list for match, if no match, just
                  * drop the packet, snoozers are loozers */
                 if (!list_empty(&senders_list)) {
                         list_for_each(curr, &senders_list){
@@ -201,7 +201,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
                         }
                         
                 } else {
-                        //DPRINT("no readers! Dropping packet!\n");
+                        //DPRINT("no pending requests! Dropping packet!\n");
                         goto reset;
                         
                 }
@@ -223,7 +223,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
                                 printk(KERN_ERR "teensy_interrupt_in_callback(): "
                                        "failed unpack(): we're hosed!\n"); //return -EOHNO;
 
-                        /* wakeup the readers wait_queue */
+                        /* wakeup the senders wait_queue */
                         wake_up(&senders_queue); 
                 }
         }
