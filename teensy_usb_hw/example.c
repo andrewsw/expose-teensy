@@ -51,14 +51,21 @@ uint8_t buffer[RAWHID_RX_SIZE];
  */
 struct teensy_msg unpack(uint8_t * buf) {
         struct teensy_msg msg = {
-                .destination = buf[0],
-                .size        = buf[1],
+                .packet_id   = buf[0],
+                .size        = buf[2],
         };
-        msg.buf = malloc(msg.size);
-        if (!msg.buf) {
-                /* TODO: fail spectacularly */
+        if (msg.size >= 1) {
+                msg.destination = buf[3];
+        } else {
+                /* TODO: DIE DIE DIE!!! */
         }
-        memcpy(msg.buf,buf+1+1,msg.size);
+                
+        msg.buf = malloc(msg.size - 1);
+        if (!msg.buf) {
+                /* TODO: fail spectacularly, here is where we need
+                 * that error message channel! */
+        }
+        memcpy(msg.buf,buf+2+1,msg.size);
         return msg;
 }
 
@@ -75,13 +82,13 @@ uint8_t * pack(struct teensy_msg msg) {
                 /* TODO: fail spectacularly */
         }
 
-        if (1+1+ msg.size > RAWHID_TX_SIZE) {
+        if (2+1+ msg.size > RAWHID_TX_SIZE) {
                 /* TODO: fail spectacularly */
         }
 
-        buf[0] = msg.destination;
-        buf[1] = msg.size;
-        memcpy(buf+1+1,msg.buf,msg.size);
+        buf[0] = msg.packet_id;
+        buf[2] = msg.size;
+        memcpy(buf+2+1,msg.buf,msg.size);
         /* leaving garbage in the tail bytes ... */
         return buf;
 }

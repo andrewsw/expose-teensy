@@ -64,7 +64,7 @@ int mc_open (struct inode *inode, struct file *filp) {
         struct mc_filp_data * data;
         struct mc_dev_t * dev;
 
-        pk("open(): iminor=%d, filp=0x%X\n", iminor(inode), ui filp);
+        pk("open(): iminor=%d, filp=%p\n", iminor(inode), filp);
   
         /* filp->private_data */
         dev = &mc_devs[iminor(inode)];
@@ -80,7 +80,7 @@ int mc_open (struct inode *inode, struct file *filp) {
 int mc_release (struct inode * inode, struct file * filp) {
         //struct mc_dev_t * dev = _get_private_data(filp)->mc;
 
-        pk("release(): iminor=%d, filp=0x%X\n", iminor(inode), ui filp);
+        pk("release(): iminor=%d, filp=%p\n", iminor(inode), filp);
 
         kfree(filp->private_data);
         return 0;
@@ -93,19 +93,21 @@ int mc_ioctl (struct inode * inode, struct file * filp, unsigned int cmd, unsign
         /* send msg */
         /* buf format is
          *
+         * [device]    : 1 byte 
          * [speed]     : 1 byte
          * [direction] : 1 byte
          */
         int ret = 0;
-        struct read_request req = {
+        struct teensy_request req = {
                 /* TODO: use correct adc code */
-                .t_dev = 'm',
-                .buf   = kmalloc(1+1, GFP_KERNEL),
-                .size  = 1+1,
+                .buf   = kmalloc(1+1+1, GFP_KERNEL),
+                .size  = 1+1+1,
         };
 
-        pk("mc_ioctl(): iminor=%d, filp=0x%X, cmd=0x%X, arg=0x%X\n",
-           iminor(inode), ui filp, ui cmd, ui arg);
+        pk("mc_ioctl(): iminor=%d, filp=%p, cmd=0x%X, arg=0x%X\n",
+           iminor(inode), filp, ui cmd, ui arg);
+
+        
 
         if (req.buf == NULL) {
                 pk("mc_ioctl(): no mem when allocing zero bytes\n");
@@ -135,23 +137,24 @@ int mc_ioctl (struct inode * inode, struct file * filp, unsigned int cmd, unsign
         }
 
         /* pack msg */
-        req.buf[0] = speed;
-        req.buf[1] = direction;
+        req.buf[0] = 'm';
+        req.buf[1] = speed;
+        req.buf[2] = direction;
 
-        /* pass request to teensy_read() */
-        /* teensy_read() returns a DIFFERENT buf in req->buf, so we must
-           free that; our mybuf was already free'd in teensy_read().
+        /* pass request to teensy_send() */
+        /* teensy_send() returns a DIFFERENT buf in req->buf, so we must
+           free that; our mybuf was already free'd in teensy_send().
         */
-        ret = teensy_read(&req);
+        ret = teensy_send(&req);
         if (ret < 0) {
-                pk("mc_ioctl(): error calling teensy_read()\n");
+                pk("mc_ioctl(): error calling teensy_send()\n");
                 return ret;
         }
 
         /* force string */
         if (req.size > 0)
                 req.buf[req.size-1] = '\0';
-        printk(KERN_DEBUG "mc_ioctl(): read %i bytes [%s] from teensy\n",
+        printk(KERN_DEBUG "mc_ioctl(): read %zu bytes [%s] from teensy\n",
                req.size, req.buf);
 
         kfree(req.buf); /* free the NEW buf */
