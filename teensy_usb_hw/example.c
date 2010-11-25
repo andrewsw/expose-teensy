@@ -36,6 +36,10 @@
 #include "analog.h"
 #include "example.h"
 
+// Forward declarations
+void fail_spectacularly();
+
+
 #define CPU_PRESCALE(n)	(CLKPR = 0x80, CLKPR = (n))
 
 volatile uint8_t do_output=0;
@@ -57,12 +61,13 @@ struct teensy_msg unpack(uint8_t * buf) {
         if (msg.size >= 1) {
                 msg.destination = buf[3];
         } else {
-                /* TODO: DIE DIE DIE!!! */
+                fail_spectacularly();
         }
                 
         msg.buf = malloc(msg.size - 1);
         if (!msg.buf) {
-                /* TODO: fail spectacularly, here is where we need
+		fail_spectacularly();
+                /* TODO: fail_spectacularly();, here is where we need
                  * that error message channel! */
         }
         //memcpy(msg.buf,buf+2+1,msg.size);
@@ -80,11 +85,11 @@ struct teensy_msg unpack(uint8_t * buf) {
 uint8_t * pack(struct teensy_msg msg) {
         uint8_t * buf = malloc(RAWHID_TX_SIZE);
         if (!buf) {
-                /* TODO: fail spectacularly */
+                fail_spectacularly();
         }
 
         if (2+1+ msg.size > RAWHID_TX_SIZE) {
-                /* TODO: fail spectacularly */
+                fail_spectacularly();
         }
 
         buf[0] = msg.packet_id;
@@ -117,32 +122,26 @@ void send(struct teensy_msg msg) {
  * @msg: expects adc pin to read in msg.buf[0]
  *
  */
-//#define ADC_READ_SIZE 24 /* assumed EVEN */
+
 void handle_adc(struct teensy_msg msg) {
-        uint8_t i, unit = msg.buf[0]; /* TODO: use this */
+        uint8_t unit = msg.buf[0]; 
         uint16_t val;
         /* TODO: use onboard light instead */
         power_portd2(500); /* power light for debug */
 
         if (msg.size < 1) {
-                /* TODO: fail spectacularly */
+                fail_spectacularly();
         }
 
         //msg.size = ADC_READ_SIZE;
 	msg.size = 2;
         msg.buf = malloc(msg.size); /* caller still knows orig msg.buf */
         if (!msg.buf) {
-                /* TODO: fail spectacularly */
+                fail_spectacularly();
         }
 
-        // put A/D measurements into next 24 bytes
-/*
-        for (i=0; i<ADC_READ_SIZE/2; i++) {
-				val = analogRead(i);
-				msg.buf[i * 2]     = val >> 8;
-				msg.buf[i * 2 + 1] = val & 0xff;
-        }
-*/
+        // Read the correct A/D channel
+
 	val = analogRead(unit);
 	msg.buf[0]     = val >> 8;
 	msg.buf[1] = val & 0xff;
@@ -152,8 +151,9 @@ void handle_adc(struct teensy_msg msg) {
 }
 
 void handle_mc(struct teensy_msg msg) {
-        uint8_t speed     = msg.buf[0],
-                direction = msg.buf[1]; /* TODO: use this */
+        uint8_t unit      = msg.buf[0],
+		speed     = msg.buf[1],
+                direction = msg.buf[2]; 
         char reply[] = "( , ) received in handle_mc()";
         reply[1] = '0'+speed; reply[3] = direction;
 
@@ -161,50 +161,61 @@ void handle_mc(struct teensy_msg msg) {
         power_portd2(500); /* power light for debug */
 
         /* validate input */
-        if (msg.size < 1+1) {
-                /* TODO: fail spectacularly */
+        if (msg.size < 1+1+1) {
+                fail_spectacularly();
         }
+/*
+ * handled as default in switch below **
         if (direction != 'f' && direction != 'r') {
-                /* TODO: fail spectacularly */
+                fail_spectacularly();
         }
+*/
 
-        /* TODO: control motors */
-	/* TODO: select which motor */
         switch (direction){
 	case 'f':		// Motors Fwd
-		//PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
-		//PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
-		OCR1A = speed;		// both set same speed for now
-		OCR1B = speed; 
-		//_delay_ms(500);
+	    if (unit == 0) {
+		PORTD &= ~((1<<PORTD6) | (1<<PORTD7));
+		OCR1A = speed;
 		PORTD |= (1<<PORTD6);	
-		PORTC |= (1<<PORTC6);
-		break;
-	case 'r':		// Motors Rev
-		//PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
-		//PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
-		OCR1A = speed;		// both set same speed for now
-		OCR1B = speed; 
-		//_delay_ms(500);
-		PORTD |= (1<<PORTD7);	
-		PORTC |= (1<<PORTC7);
-		break;
-	case 's':		// Motors Off
-		PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
+	    } else {
 		PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
-		OCR1A = 0;		// both set same speed for now
+		OCR1B = speed; 
+		PORTC |= (1<<PORTC6);
+	    }
+	    break;
+	case 'r':		// Motors Rev
+	    if (unit == 0) {
+		PORTD &= ~((1<<PORTD6) | (1<<PORTD7));
+		OCR1A = speed;
+		PORTD |= (1<<PORTD7);	
+	    } else {
+		PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
+		OCR1B = speed; 
+		PORTC |= (1<<PORTC7);
+	    }
+	    break;
+	case 's':		// Motors Off
+	    if (unit == 0) {
+		PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
+		OCR1A = 0;
+		_delay_ms(500); 	// Don't allow another speed command immediately
+	    } else {
+		PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
 		OCR1B = 0; 
 		_delay_ms(500);
-		break;
+	// This is just for testing!
+	//	fail_spectacularly();
+	    }
+	    break;
 	default:
-		/* fail */
-		break;
+		fail_spectacularly();
+	    break;
 	} // end switch
 
         msg.size = sizeof(reply);
         msg.buf = malloc(msg.size); /* caller still knows orig msg.buf */
         if (!msg.buf) {
-                /* TODO: fail spectacularly */
+                fail_spectacularly();
         }
         memcpy(msg.buf,reply,msg.size);
 
@@ -266,12 +277,7 @@ int main(void)
 	while (1) {
 		// if received data, do something with it
 		r = usb_rawhid_recv(buffer, 0);
-        // TODO: extract message struct from buf and pass to
-        // appropriate handler()
 		if (r > 0) {
-// PD4 --> Red 1
-// PD6 --> Green 1
-// PD7 --> Blue 1
 // give a blink on packet received - uncomment for debug
 /*
 	DDRD |= (1<<PORTD3);
@@ -288,7 +294,7 @@ int main(void)
                     handle_mc(msg);
                     break;
             default:
-                    /* TODO: fail spectacularly */
+                    fail_spectacularly();
 	            break;
 	}
             free(msg.buf);
@@ -297,8 +303,28 @@ int main(void)
 	}
 }
 
+// come here for catastrophic failure
+// Leds flash forever! Note we could easily put in codes here also.
+void fail_spectacularly(){
+    DDRD |= (1<<PORTD1)|(1<<PORTD2)|(1<<PORTD3);
+    while(1){
+        PORTD |= (1<<PORTD1);
+        _delay_ms(100);
+        PORTD |= (1<<PORTD2);
+        _delay_ms(100);
+        PORTD |= (1<<PORTD3);
+        _delay_ms(100);
+
+        PORTD &= ~(1<<PORTD3);
+        _delay_ms(100);
+        PORTD &= ~(1<<PORTD2);
+        _delay_ms(100);
+        PORTD &= ~(1<<PORTD1);
+        _delay_ms(100);
+    }
+}
 // This interrupt routine is run approx 61 times per second.
-/*  Note used currently
+/*  Not used currently - might be in the future
 ISR(TIMER0_OVF_vect)
 {
 	static uint8_t count=0;

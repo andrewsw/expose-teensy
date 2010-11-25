@@ -112,7 +112,7 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
         }
 
         req.buf[0] = 'a';
-	req.buf[1] = (uint8_t)adc_devp->unit;
+	req.buf[1] = (uint8_t)adc_devp->unit;          // stow the unit number for adc access
         
         /* pass request to teensy_send() */
         /* teensy_send() returns a DIFFERENT buf in req->buf, so we must

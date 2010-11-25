@@ -93,15 +93,16 @@ int mc_ioctl (struct inode * inode, struct file * filp, unsigned int cmd, unsign
         /* send msg */
         /* buf format is
          *
-         * [device]    : 1 byte 
-         * [speed]     : 1 byte
-         * [direction] : 1 byte
+         * [device]    		: 1 byte 
+         * [minor device]  	: 1 byte 
+         * [speed]     		: 1 byte
+         * [direction] 		: 1 byte
          */
         int ret = 0;
         struct teensy_request req = {
                 /* TODO: use correct adc code */
-                .buf   = kmalloc(1+1+1, GFP_KERNEL),
-                .size  = 1+1+1,
+                .buf   = kmalloc(1+1+1+1, GFP_KERNEL),
+                .size  = 1+1+1+1,
         };
 
         pk("mc_ioctl(): iminor=%d, filp=%p, cmd=0x%X, arg=0x%X\n",
@@ -138,8 +139,9 @@ int mc_ioctl (struct inode * inode, struct file * filp, unsigned int cmd, unsign
 
         /* pack msg */
         req.buf[0] = 'm';
-        req.buf[1] = speed;
-        req.buf[2] = direction;
+        req.buf[1] = (uint8_t)iminor(inode);
+        req.buf[2] = speed;
+        req.buf[3] = direction;
 
         /* pass request to teensy_send() */
         /* teensy_send() returns a DIFFERENT buf in req->buf, so we must

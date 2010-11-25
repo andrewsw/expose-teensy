@@ -36,11 +36,11 @@ static struct usb_driver teensy_driver = {
  *
  */
 
-/* list, lock and wait_queue for sleeping readers */
-static LIST_HEAD(readers_list);
-spinlock_t readers_lock;
+/* list, lock and wait_queue for sleeping senders */
+static LIST_HEAD(senders_list);
+spinlock_t senders_lock;
 
-wait_queue_head_t readers_queue;
+wait_queue_head_t senders_queue;
 
 struct usb_teensy *teensy_dev;
 
@@ -184,12 +184,12 @@ static void teensy_interrupt_in_callback (struct urb *urb)
                 
                 
                 /* lock the list!!! */
-                spin_lock(&readers_lock);
+                spin_lock(&senders_lock);
 
-                /* search readers list for match, if no match, just
+                /* search senders list for match, if no match, just
                  * drop the packet, snoozers are loozers */
-                if (!list_empty(&readers_list)) {
-                        list_for_each(curr, &readers_list){
+                if (!list_empty(&senders_list)) {
+                        list_for_each(curr, &senders_list){
                                 
                                 struct teensy_request *temp = list_entry(curr, struct teensy_request, list);
                                 if (temp) {
@@ -202,7 +202,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
                         }
                         
                 } else {
-                        //DPRINT("no readers! Dropping packet!\n");
+                        //DPRINT("no pending requests! Dropping packet!\n");
                         goto reset;
                         
                 }
@@ -224,16 +224,13 @@ static void teensy_interrupt_in_callback (struct urb *urb)
                         if ((ret = unpack(req)) < 0) /* TODO: what do we do ??? */
                                 printk(KERN_ERR "teensy_interrupt_in_callback(): "
                                        "failed unpack(): we're hosed!\n"); //return -EOHNO;
-			DPRINT("in_callback response:\n");
-			//for (i=0; i < req->size;i++) {
-			//	DPRINT ("%c\n", req->buf[i]);
-			//}
-                        /* wakeup the readers wait_queue */
-                        wake_up(&readers_queue); 
+
+                        /* wakeup the senders wait_queue */
+                        wake_up(&senders_queue); 
                 }
         }
 reset:
-        spin_unlock(&readers_lock);
+        spin_unlock(&senders_lock);
         
         usb_submit_urb(urb, GFP_ATOMIC);
 
@@ -291,7 +288,7 @@ void init_reader (struct usb_interface *intf)
  * teensy_send
  *
  * this function takes a teensy_request from a client, and cues it on
- * the readers_list for servicing by the reader callback routine
+ * the senders_list for servicing by the reader callback routine
  *
  * a submission here will block, but waking is probably
  * non-deterministic. If there are multiple reads queued for the same
@@ -342,15 +339,15 @@ int teensy_send(struct teensy_request *req)
         DPRINT("req size: %zu, packet_id: %c, buffer add: %p\n", req->size, req->packet_id, req->buf);
 
         /* LOCK the LIST!! */
-        spin_lock(&readers_lock);
+        spin_lock(&senders_lock);
 
         DPRINT ("got reader lock\n");
         
         /* put the request on the tail of the list */
-        list_add_tail(&req->list, &readers_list); 
+        list_add_tail(&req->list, &senders_list); 
 
         /* UNLOCK THE LIST!! */
-        spin_unlock(&readers_lock);
+        spin_unlock(&senders_lock);
         
         /* send packet to teensy */
         /* TODO -- right now teensy just sends data on its own, need
@@ -378,13 +375,13 @@ int teensy_send(struct teensy_request *req)
         usb_submit_urb(out_urb, GFP_KERNEL);
         DPRINT("teensy_send(): 4 \n");      
         /* wait_event completed == TRUE */
-        wait_event(readers_queue, (req->complete));
+        wait_event(senders_queue, (req->complete));
         DPRINT("teensy_send(): 5 \n");
         /* back from blocked read, get the hell off the readers list
          * because we'll be freed soon...*/
-        spin_lock(&readers_lock);
+        spin_lock(&senders_lock);
         list_del(&req->list);
-        spin_unlock(&readers_lock);
+        spin_unlock(&senders_lock);
 
         return req->size;
 }
@@ -486,8 +483,8 @@ static int probe_teensy (struct usb_interface *intf,
         usb_set_intfdata (intf, dev);
 
         /* additional setup stuff */
-        spin_lock_init (&readers_lock);
-        init_waitqueue_head(&readers_queue);
+        spin_lock_init (&senders_lock);
+        init_waitqueue_head(&senders_queue);
         pkt_id = 0;
         spin_lock_init (&pkt_id_lock);
         
