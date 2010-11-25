@@ -65,7 +65,8 @@ struct teensy_msg unpack(uint8_t * buf) {
                 /* TODO: fail spectacularly, here is where we need
                  * that error message channel! */
         }
-        memcpy(msg.buf,buf+2+1,msg.size);
+        //memcpy(msg.buf,buf+2+1,msg.size);
+	memcpy(msg.buf,buf+2+2,msg.size);
         return msg;
 }
 
@@ -116,9 +117,9 @@ void send(struct teensy_msg msg) {
  * @msg: expects adc pin to read in msg.buf[0]
  *
  */
-#define ADC_READ_SIZE 24 /* assumed EVEN */
+//#define ADC_READ_SIZE 24 /* assumed EVEN */
 void handle_adc(struct teensy_msg msg) {
-        uint8_t i, pin = msg.buf[0]; /* TODO: use this */
+        uint8_t i, unit = msg.buf[0]; /* TODO: use this */
         uint16_t val;
         /* TODO: use onboard light instead */
         power_portd2(500); /* power light for debug */
@@ -127,18 +128,25 @@ void handle_adc(struct teensy_msg msg) {
                 /* TODO: fail spectacularly */
         }
 
-        msg.size = ADC_READ_SIZE;
+        //msg.size = ADC_READ_SIZE;
+	msg.size = 2;
         msg.buf = malloc(msg.size); /* caller still knows orig msg.buf */
         if (!msg.buf) {
                 /* TODO: fail spectacularly */
         }
 
         // put A/D measurements into next 24 bytes
+/*
         for (i=0; i<ADC_READ_SIZE/2; i++) {
 				val = analogRead(i);
 				msg.buf[i * 2]     = val >> 8;
 				msg.buf[i * 2 + 1] = val & 0xff;
         }
+*/
+	val = analogRead(unit);
+	msg.buf[0]     = val >> 8;
+	msg.buf[1] = val & 0xff;
+
         send(msg);
         free(msg.buf);
 }
@@ -164,20 +172,20 @@ void handle_mc(struct teensy_msg msg) {
 	/* TODO: select which motor */
         switch (direction){
 	case 'f':		// Motors Fwd
-		PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
-		PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
+		//PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
+		//PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
 		OCR1A = speed;		// both set same speed for now
 		OCR1B = speed; 
-		_delay_ms(500);
+		//_delay_ms(500);
 		PORTD |= (1<<PORTD6);	
 		PORTC |= (1<<PORTC6);
 		break;
 	case 'r':		// Motors Rev
-		PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
-		PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
+		//PORTD &= ~((1<<PORTD6) | (1<<PORTD7));	// turns off motors
+		//PORTC &= ~((1<<PORTC6) | (1<<PORTC7));
 		OCR1A = speed;		// both set same speed for now
 		OCR1B = speed; 
-		_delay_ms(500);
+		//_delay_ms(500);
 		PORTD |= (1<<PORTD7);	
 		PORTC |= (1<<PORTC7);
 		break;

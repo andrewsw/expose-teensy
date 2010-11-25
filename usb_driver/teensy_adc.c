@@ -39,6 +39,7 @@ static struct adc_dev_t {
 /* to put in filp->private_data */
 /* make it a struct so i can add more fields later if needed */
 struct adc_filp_data {
+	int unit;
         struct adc_dev_t * adc;
 };
 
@@ -72,6 +73,7 @@ int adc_open (struct inode *inode, struct file *filp) {
         if (!data)
                 return -ENOMEM;
         data->adc = dev;
+	data->unit = iminor(inode);
         filp->private_data = data;
 
         return 0;
@@ -95,10 +97,11 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
 {
         //struct adc_dev_t * dev = _get_private_data(filp)->adc;
         int ret = 0;
-        char * mybuf = kmalloc(1, GFP_KERNEL);
+	struct adc_filp_data *adc_devp = filp->private_data;	// pointer to the key structure
+        char * mybuf = kmalloc(2, GFP_KERNEL);
         struct teensy_request req = {
                 .buf   = mybuf,
-                .size  = 1,
+                .size  = 2,
         };
 
         pk("read(): buf=%p, count=%zu, *pos=0x%X\n",  buf, count, ui *pos);
@@ -109,6 +112,7 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
         }
 
         req.buf[0] = 'a';
+	req.buf[1] = (uint8_t)adc_devp->unit;
         
         /* pass request to teensy_send() */
         /* teensy_send() returns a DIFFERENT buf in req->buf, so we must

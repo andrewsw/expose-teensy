@@ -153,6 +153,7 @@ static void teensy_interrupt_in_callback (struct urb *urb)
         struct usb_teensy *dev;
         int status;
         int ret;
+	//int i;   // only used for debug
 
         struct list_head *curr;
         char packet_id;
@@ -219,10 +220,14 @@ static void teensy_interrupt_in_callback (struct urb *urb)
                                        "failed atomic kmalloc: we're hosed!\n"); //return -ENOMEM;
                         req->size = urb->actual_length;
                         memcpy(req->buf, dev->in_buf, urb->actual_length);
+			
                         if ((ret = unpack(req)) < 0) /* TODO: what do we do ??? */
                                 printk(KERN_ERR "teensy_interrupt_in_callback(): "
                                        "failed unpack(): we're hosed!\n"); //return -EOHNO;
-
+			DPRINT("in_callback response:\n");
+			//for (i=0; i < req->size;i++) {
+			//	DPRINT ("%c\n", req->buf[i]);
+			//}
                         /* wakeup the readers wait_queue */
                         wake_up(&readers_queue); 
                 }
