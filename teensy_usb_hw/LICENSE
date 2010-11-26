@@ -1,0 +1,13 @@
+The files in this directory are provided under a simple permissive
+license as listed in the header of each file. This license is
+ambiguous in terms of whether is it compatible with GPL v2 as the rest
+of the software in the teensy driver. But the software in this
+directory is not linked against any of the software that is licensed
+under the GPL, and is in intended to run on a separate device. We
+think that this does not cause a license conflict. 
+
+We hope to make the license consistent across this project in the
+future, but cannot guarantee that this will happen. 
+
+The licenses for each file in this directory are included in the files
+directly.

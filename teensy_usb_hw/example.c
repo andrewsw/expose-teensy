@@ -19,12 +19,18 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
+ *
+ * TODO: fix this to a proper copyright notice of the form:
+ *
+ * Copyright (c) 2010: Jim Larson ...
+ *
+ * Modified to provide PWM Motor control using Timer 1
+ *	11/9/2010     -jkl
+ * Fixed port definitions to comply with Atmel desires. 11/16/2010 -jkl
+ *	ADCs only read when asked.
+ *
+ * 
  */
-
-// Modified to provide PWM Motor control using Timer 1
-//	11/9/2010     -jkl
-// Fixed port definitions to comply with Atmel desires. 11/16/2010 -jkl
-//	ADCs only read when asked.
 
 #include <avr/io.h>
 #include <avr/pgmspace.h>

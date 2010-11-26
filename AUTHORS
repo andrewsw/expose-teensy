@@ -1,0 +1,8 @@
+The authors of this driver and accompanying userland and teensy code
+are listed here. Any authors should feel free to add themselves here
+in whatever way they feel is appropriate.
+
+Andrew Sackville-West <andrew@swclan.homelinux.org> -- initial
+implementation of the core of the teensy driver kernel module, random
+hacking throughout.
+

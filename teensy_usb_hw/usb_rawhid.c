@@ -19,10 +19,14 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
+ *
+ * Copyright (c) 2010: Andrew Sackville-West <andrew@swclan.homelinux.org>
+ *                     -- comment out rawhid descriptor, we don't use it.
+ *
+ *                     
+ * TODO: we need to clean this up to just include those bits we actually use.
+ * 
  */
-
-// Version 1.0: Initial Release
-// Version 1.1: fixed bug in analog
 
 #define USB_PRIVATE_INCLUDE
 #include "usb_rawhid.h"

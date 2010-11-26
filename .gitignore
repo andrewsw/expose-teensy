@@ -1,6 +1,7 @@
 *.ko
 *.mod.c
 *.o
+*.swp
 *eep
 *elf
 *hex
@@ -10,9 +11,9 @@
 *o.cmd
 *sym
 *~
-*.swp
 .dep
 .tmp_versions
 /git-daemon-export-ok
+/userland_mc
 Module.symvers
 TAGS
