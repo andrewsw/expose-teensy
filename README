@@ -8,183 +8,61 @@ for a variety of purposes. The idea is that a simple set of ioctls,
 along with reads and writes can provide general purpose functionality
 without fiddly access to the teensy directly.
 
-Repository
-==========
+Important Warning
+=================
 
-Branches
---------
+This project involves connecting a general purpose microcontroller
+directly to your usb controllers and then doing arbitrary things with
+them. If you don't know what you're doing, you could easily fry your
+usb controllers on you spiffy new laptop. You could also let the magic
+smoke out of your fun new teensy. Proceed at your own risk. You have
+been warned!
 
-* master
-* reader: Andrew's teensy_read() branch
 
-Git Cheat Sheet
----------------
+Building
+========
 
-* create and change to local reader branch tracking global reader branch: `git checkout --track -b reader origin/reader`
-* create and change to a local branch (no tracking): `git checkout -b <branch>`
-* change to a different branch: `git checkout <branch>`
-* show list of branches: `git branch -av`
-* make git use color when sensible: `git config --global color.ui auto`
-* merge <branch> with reader: `git checkout reader; git merge <branch>`
-* show a graphical summary of all history and refs: `git log --graph --all --pretty=oneline --decorate --abbrev-commit`
-* tag a commit, with an annotation: `git tag -a <tag name> <commit> -m <annotation>`
-* look at a file as it existed in a particular commit or tag: e.g. `git show skeletal-adc-submodule:usb_driver/teensy_adc.c`
-  note the *full* path usb_driver/teensy_adc.c.
-* stage only part of a file: `git add --patch <some file>`
-  now follow the prompts to add particular changes.
-* delete a remote branch: `git push origin :<branch to delete>`
-* view the *staged* changes: `git diff --cached`
+There are included Makefiles for building everything in this
+project. But, note that this is written against the 2.6.24 linux
+kernel and may not build cleanly against just any ol' kernel. 
 
-Architecture Implementation (have done)
-=======================================
+ --- Kernel module:
+ 
+    Building the kernel module requires the appropriate kernel headers
+    be installed. If you are running a 2.6.24 kernel, then the
+    makefile should just find the headers (assuming they are
+    installed). If you are building while running a different kernel,
+    it makefile looks in your home directory for
+    src/linux-2.6.24. It's up to you to fix that however is
+    appropriate. 
 
-Monolithic module
------------------
+ --- Teensy code:
+ 
+    The actual code to run on the teensy requires the following
+    packages (using Debian names because that what we build on):
 
-(see discussion below)
+        gcc-avr
+        avr-libc
 
-(THIS IS ALL RELATIVE THE  usb_driver/ DIR)
+    That should get you a reasonable build-environment to compile for
+    the teensy.
 
-The monolithic module is called teensy_mono. To make it easy to change
-to modular modules later, the monolithic module implementation is
-broken up into sub-modules.  To create a new submodule:
+Using
+=====
 
-1. create a separate module, say M, like we learned in class: with
-   M_init and M_exit functions, but whose M_read, M_write,
-   etc. functions call into teensy.c as necessary, to actually
-   communicate with the teensy.
+To use the code, you have to first insert the kernel module in the
+usual way:
 
-   see the skeletal-adc-submodule tag for an example skeletal module,
-   or commit fcf80e7 for an entire sstore as submodule.
+    insmod teensy_mono.ko
 
-2. make teensy.c load the M, M_init and M_exit to lists in
-   submodules.c
+And then plug in the device. The module will see the teensy and
+configure itself to expose some adc converters and two motor
+controllers. These are character devices that interact as follows:
 
-   see `git diff bc1ec72^ bc1ec72` for an example
+/dev/adc[01]: a read() on these devices will return one 8 bit reading
+from the appropriate adc device on the teensy. 
 
-3. add M.o to the list of teensy_mono-objs in the Makefile.
+/dev/mc[01]: using ioctl()'s, you can control a dc motor connected to
+the teensy. See teensy_mc.h for details of available ioctls and see
+the diagrams for how to hook up a couple of motors to the pwms.
 
-   see `git diff aa11bb6^ aa11bb6 Makefile` for an example
-
-4. create module handler code to run in teensy land, and integrate it
-   into the teensy kernel (half assed for adc: the handler code is in
-   the main file).
-
-The adc dev is implemented this way by teensy_adc*.
-
-malloc() and free() for msg structs
------------------------------------
-
-This is arbitrary in some place, and potentially confusing ... Here's
-how it works right now:
-
-kernel land
-~~~~~~~~~~~
-
-The msg struct is (currently called) read_request.  It has a .buf
-char* of size .size.  Rules are:
-
-- the creator of the struct kmalloc()s .buf, and kfree()s .buf on return
-  from teensy_read(), but teensy read returns a *different* buf in
-  .buf.
-
-- intermediate modifiers of the struct (pack() and unpack()) kfree()
-  the current .buf and kmalloc() a new .buf
-
-So, this may sound a little strange, but is easy to remember: each
-modifier makes exactly one kmalloc() and kfree() call.
-
-hw land
-~~~~~~~
-
-The msg struct is teensy_msg.  It is a .buf uint8_t* of size
-.size. Rules are:
-
-- the creator of the struct, unpack(), malloc()s .buf, and the caller
-  of unpack(), main(), free()s .buf, when the handler() returns.
-
-- the handler() malloc()s a second buf to send() to kernel land, and
-  free()s that buf on return from send()
-
-- meanwhile, send() calls pack(), which malloc()s a buf, which send()
-  then free()s
-
-Here I'm not sure what the simple rule is, but maybe: if you're
-responsible for the malloc(), then you're responsible for the free()?
-
-Architecture Ideas (might do)
-=============================
-
-Here are some architecture ideas for people to think about:
-
-IN Data: data coming from the device to the host machine
---------------------------------------------------------
-
-this data could be coming in regularly and driven by the teensy
-itself. Using the perrenial example of an ADC device, if someone opens
-an ADC device (like /dev/adc0) then they will theoretically begin
-reading at some point. So we should have the teensy begin sending
-packets with samples.  These samples will come through an URB which
-will trigger a call back function when completed. That callback
-function will have to run in interrupt mode, grab the buffer of data
-and do something sane with it while setting up the URB and
-resubmitting it. That would look something like this psuedo-code:
-
-	  a. check for error conditions
-	  b. peek at the descriptor bytes of the data buffer
-	  c. get the appropriate lock based on where the data is going
-	  d. copy the data into the destination buffer
-	  e. release the lock
-	  f. wakeup an appropriate sleeper to handle the data
-	  g. resubmit the URB and get out of the way.
-
-Individual /dev/ devices
-------------------------
-
-if these are input devices, then they
-need to have some kind of local buffer to queue data. The URB callback
-from 1. above would have to get a lock on that buffer (I'm guessing an
-array allocated ring buffer), and cram the data in. The device would
-need to have a kthread or some kind of sleeper waiting for data in
-that queue. When it gets awakened, it should chew through the whole
-ring buffer until all the data is pushed out to the user. This will be
-tricky, because we need a user to actually be reading (a blocked
-read() call would be ideal for this). 
-
-Modular modules? (copied from email w/ Subject: Architecture)
--------------------------------------------------------------
-
-Principally, the question as I see it is: how do we tie together a
-variety of character devices to a single usb-handling backend. Jim has
-expressed an interest in making this extensible as much as possible
-(without jeopardizing the project as an assignment). I think this is
-valuable, and will help with the division of labor within the group.
-
-The idea is to have a variety of "front-ends" that all communicate
-with a backend that marshalls it all and does the actual talking to
-the device. This allows pretty good modularity in that various devices
-can be added without having to muck around too much in the usb
-code. There would just need to be some hooks into the usb code that
-tell it how to identify a packet of the data for that device and where
-to put it. Of course, there would need to be work on the teensy as
-well, but that's a separate issue from what I'm trying to discuss
-here.
-
-I see two basic options for handling this from a 10,000 foot view.
-
-1) Monolithic module -- when the module is inserted (or probed
-perhaps), it sets up the usb backend, does a bunch of other setup and
-exposes all the currently available devices
-
-2) modular modules (heh) -- there is one module that handles the
-backend usb stuff. Then there are other modules that depend on that
-module. When they get inserted they register themselves with the
-backend, perhaps provide some information on how to handle it's data
-(pointers to buffers or handler functions) and then expose their
-devices.
-
-I like 2, but think it might be too complicated for our time
-constraints. If we do 1 I think we should make real efforts to keep it
-modular so that later it could be easily massaged into 2. I think 2 is
-a better long-term solution and creates the kind of extensibility that
-Jim would like to see.
