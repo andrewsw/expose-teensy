@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
     fclose(fp);
 
     while (1) {
-        sleep(2);
+        // sleep(2);
         fp = fopen("/proc/stat", "r");
         fgets(buffer, 255, fp);
         sscanf(buffer, "cpu  %llu %llu %llu %llu %llu %llu %llu %llu",

@@ -51,7 +51,7 @@ int main(int argc, char ** argv) {
 	const int MaxAdc0 = 100;
 	const int MaxAdc1 = 0x03ff; /* experimental maxish */
 	const int MaxMSpeed = 190;
-	const int MinMSpeed = 130;
+	const int MinMSpeed = 125;
 	int value, speed;
         int fdAdc0, fdM0, fdAdc1, fdM1;
 	char adc_file0[] = "/dev/adc0";
@@ -103,8 +103,8 @@ int main(int argc, char ** argv) {
 		DEBUG("mc=0, value=%x\n", value);
 		speed = ((float)value-MinAdc1)/(MaxAdc1-MinAdc1)
 				*(MaxMSpeed-MinMSpeed) + MinMSpeed;
-		speed<MinMSpeed ? MinMSpeed : speed;
-		speed>MaxMSpeed ? MaxMSpeed : speed;
+		speed = speed<MinMSpeed + 10 ? 0 : speed;
+		speed = speed>MaxMSpeed ? MaxMSpeed : speed;
 		DEBUG("speed=%d\n", speed);
 		
 		if (ioctl(fdM0, MC_IOC_FWD, speed ) < 0){
@@ -123,7 +123,7 @@ int main(int argc, char ** argv) {
 		}*/
 
 		/* put the program to sleep to avoid sending to much data */
-		sleep(1);
+		//sleep(1);
 	}
 	return 0;
 }

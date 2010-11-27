@@ -133,7 +133,7 @@ void handle_adc(struct teensy_msg msg) {
         uint8_t unit = msg.buf[0]; 
         uint16_t val;
         /* TODO: use onboard light instead */
-        power_portd2(500); /* power light for debug */
+	//power_portd2(500); /* power light for debug */
 
         if (msg.size < 1) {
                 fail_spectacularly();
@@ -164,7 +164,7 @@ void handle_mc(struct teensy_msg msg) {
         reply[1] = '0'+speed; reply[3] = direction;
 
         /* TODO: use onboard light instead */
-        power_portd2(500); /* power light for debug */
+	//power_portd2(500); /* power light for debug */
 
         /* validate input */
         if (msg.size < 1+1+1) {
@@ -304,7 +304,7 @@ int main(void)
 	            break;
 	}
             free(msg.buf);
-            _delay_ms(50);
+            // _delay_ms(50);
 		}
 	}
 }
