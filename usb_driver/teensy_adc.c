@@ -116,6 +116,8 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
 {
         //struct adc_dev_t * dev = _get_private_data(filp)->adc;
         int ret = 0;
+        int i;
+        
 	struct adc_filp_data *adc_devp = filp->private_data;	// pointer to the key structure
         char * mybuf = kmalloc(2, GFP_KERNEL);
         struct teensy_request req = {
@@ -143,6 +145,11 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
                 return ret;
         }
         printk(KERN_DEBUG "adc_read(): read %zu bytes from teensy\n", req.size);
+
+        for (i = 0; i < req.size; i++) {
+                pk("adc_read(): byte %d: %x", i, req.buf[i]);
+        }
+        
 
         /* copy data to user buf */
         ret = req.size < count ? req.size : count; /* min */
