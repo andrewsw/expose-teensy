@@ -49,7 +49,7 @@
 MODULE_LICENSE("GPL");
 
 #define DEVICE_NAME "adc"
-#define ADC_NUM_DEVS 2
+#define ADC_NUM_DEVS 6
 
 static struct adc_dev_t {
         struct cdev cdev;
