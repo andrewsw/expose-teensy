@@ -96,12 +96,16 @@ int main(int argc, char ** argv) {
 		read(fdAdc1, buf1, 2);
 
 		/* write the corresponding speed to both mc */
+		DEBUG("buf[0]=%x, buf1[1]=%x\n",buf1[0], buf1[1]);
+		
 		value = (int) buf1[0] << 8 + (int) buf1[1];
-		DEBUG("mc=0, speed=%i\n", value);
+		DEBUG("mc=0, value=%x\n", value);
 		speed = ((float)value-MinAdc1)/(MaxAdc1-MinAdc1)
 				*(MaxMSpeed-MinMSpeed) + MinMSpeed;
 		speed<MinMSpeed ? MinMSpeed : speed;
 		speed>MaxMSpeed ? MaxMSpeed : speed;
+		DEBUG("speed=%d\n", speed);
+		
 		if (ioctl(fdM0, MC_IOC_FWD, speed ) < 0){
 			perror("ioctl error");
 			exit(errno);
