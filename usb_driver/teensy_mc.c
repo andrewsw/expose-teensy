@@ -46,7 +46,7 @@
  *
  */
 
-MODULE_LICENSE("GPLv2");
+MODULE_LICENSE("GPL");
 
 #define DEVICE_NAME "mc"
 #define MC_NUM_DEVS 2

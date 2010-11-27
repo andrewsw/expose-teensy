@@ -46,7 +46,7 @@
  *
  */
 
-MODULE_LICENSE("GPLv2");
+MODULE_LICENSE("GPL");
 
 #define DEVICE_NAME "adc"
 #define ADC_NUM_DEVS 2
