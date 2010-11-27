@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
         printf("nicePeriod %d userPeriod %d systemAllPeriod %d\n",
                 nicePeriod, userPeriod, systemAllPeriod);
         // CPUMeter.c
-        double cpu = MIN(100.0, MAX(0.0, (nicePeriod + userPeriod + systemAllPeriod / totalPeriod * 100.0)));
+        double cpu = MIN(100.0, MAX(0.0, ((nicePeriod + userPeriod + systemAllPeriod) / totalPeriod * 100.0)));
         printf("%f\n", cpu);
         fclose(fp);
     }
