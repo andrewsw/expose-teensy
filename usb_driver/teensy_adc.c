@@ -147,7 +147,7 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
         printk(KERN_DEBUG "adc_read(): read %zu bytes from teensy\n", req.size);
 
         for (i = 0; i < req.size; i++) {
-                pk("adc_read(): byte %d: %x", i, req.buf[i]);
+                pk("adc_read(): byte %d: %x\n", i, req.buf[i+1]);
         }
         
 
