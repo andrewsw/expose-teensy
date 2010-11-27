@@ -51,7 +51,7 @@ int main(int argc, char ** argv) {
 	const int MaxAdc0 = 100;
 	const int MaxAdc1 = 0x03ff; /* experimental maxish */
 	const int MaxMSpeed = 190;
-	const int MinMSpeed = 125;
+	const int MinMSpeed = 120;
 	int value, speed;
         int fdAdc0, fdM0, fdAdc1, fdM1;
 	char adc_file0[] = "/dev/adc0";
