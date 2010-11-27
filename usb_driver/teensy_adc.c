@@ -49,7 +49,7 @@
 MODULE_LICENSE("GPL");
 
 #define DEVICE_NAME "adc"
-#define ADC_NUM_DEVS 2
+#define ADC_NUM_DEVS 6
 
 static struct adc_dev_t {
         struct cdev cdev;
@@ -143,6 +143,7 @@ ssize_t adc_read (struct file *filp, char __user *buf, size_t count, loff_t *pos
                 return ret;
         }
         printk(KERN_DEBUG "adc_read(): read %zu bytes from teensy\n", req.size);
+
 
         /* copy data to user buf */
         ret = req.size < count ? req.size : count; /* min */

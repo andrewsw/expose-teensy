@@ -32,10 +32,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <stdint.h>
 
 #include "usb_driver/teensy_mc.h"
 
-#define DEBUG(x...) /* fprintf(stderr, x) */
+#define DEBUG(x...)  fprintf(stderr, x) 
 
 void usage(char * argv0) {
   fprintf(stderr, "usage: %s\n",
@@ -46,18 +47,18 @@ void usage(char * argv0) {
 int main(int argc, char ** argv) {
 	/* constant limit values of ADCs and MC speed */
 	const int MinAdc0 = 0;
-	const int MinAdc1 = 0;
+	const int MinAdc1 = 0x0100; /* experimental min from light sensor */
 	const int MaxAdc0 = 100;
-	const int MaxAdc1 = 100;
-	const int MaxMSpeed = 250;
-	const int MinMSpeed = 0;
+	const int MaxAdc1 = 0x03ff; /* experimental maxish */
+	const int MaxMSpeed = 190;
+	const int MinMSpeed = 120;
 	int value, speed;
         int fdAdc0, fdM0, fdAdc1, fdM1;
 	char adc_file0[] = "/dev/adc0";
 	char adc_file1[] = "/dev/adc1"; 
 	char mc_file0[] = "/dev/mc0";
 	char mc_file1[] = "/dev/mc1";
-	char buf0, buf1;
+	uint8_t buf0[2], buf1[2];
 
         /* check args */
         if (argc != 1)
@@ -70,12 +71,12 @@ int main(int argc, char ** argv) {
                 perror(NULL);
                 exit(errno);
         }
-/*	fdAdc1 = open(adc_file1, O_RDONLY);
+	fdAdc1 = open(adc_file1, O_RDONLY);
 	if (fdAdc1 < 0) {
                 fprintf(stderr, "open(%s): ", adc_file1);
                 perror(NULL);
                 exit(errno);
-        }*/
+        }
 	fdM0 = open(mc_file0, O_WRONLY);
 	if (fdM0 < 0) {
                 fprintf(stderr, "open(%s): ", mc_file0);
@@ -93,15 +94,19 @@ int main(int argc, char ** argv) {
 	{
 		/* read 1 byte from both adc */
 		read(fdAdc0, buf0, 1);
-/*		read(fdAdc1, buf1, 1);*/
+		read(fdAdc1, buf1, 2);
 
 		/* write the corresponding speed to both mc */
-		value = (int) buf0;
-		DEBUG("mc=0, speed=%i\n", value);
-		speed = ((float)value-MinAdc0)/(MaxAdc0-MinAdc0)
+		DEBUG("buf[0]=%x, buf1[1]=%x\n",buf1[0], buf1[1]);
+		
+		value = (buf1[0] << 8) +  buf1[1];
+		DEBUG("mc=0, value=%x\n", value);
+		speed = ((float)value-MinAdc1)/(MaxAdc1-MinAdc1)
 				*(MaxMSpeed-MinMSpeed) + MinMSpeed;
-		speed<MinMSpeed ? MinMSpeed : speed;
-		speed>MaxMSpeed ? MaxMSpeed : speed;
+		speed = speed<MinMSpeed + 10 ? 0 : speed;
+		speed = speed>MaxMSpeed ? MaxMSpeed : speed;
+		DEBUG("speed=%d\n", speed);
+		
 		if (ioctl(fdM0, MC_IOC_FWD, speed ) < 0){
 			perror("ioctl error");
 			exit(errno);
@@ -118,7 +123,7 @@ int main(int argc, char ** argv) {
 		}*/
 
 		/* put the program to sleep to avoid sending to much data */
-		sleep(1);
+		//sleep(1);
 	}
 	return 0;
 }

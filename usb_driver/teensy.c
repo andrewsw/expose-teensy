@@ -151,7 +151,7 @@ int unpack(struct teensy_request * req) {
         unpacked = kzalloc(size, GFP_ATOMIC);
         if (!unpacked)
                 return -ENOMEM;
-        memcpy(unpacked,req->buf+1+1,size);
+        memcpy(unpacked,req->buf+2+1,size);
 
         /* free old buf; insert new buf and updated size */
         kfree(req->buf);

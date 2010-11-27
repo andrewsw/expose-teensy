@@ -24,8 +24,11 @@
  */
 
 #include <stdlib.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <errno.h>
 #include <string.h>
+#include "usb_driver/teensy_mc.h"
 
 #define String_startsWith(s, match) (strstr((s), (match)) == (s))
 #define MIN(a,b) ((a)<(b)?(a):(b))
@@ -56,9 +59,18 @@ int main(int argc, char *argv[])
     unsigned long long int prevSystemAllTime, prevTotalTime, prevIdleAllTime;
     /*int i, processorCount = countProcessors();*/
     char buffer[256];
-
+    int speed;
+    
     // initialize
     FILE *fp = fopen("/proc/stat", "r");
+    int fdM1 = open("/dev/mc1", O_WRONLY);
+    if (fdM1 < 0) {
+      fprintf(stderr, "open(/dev/mc1): ");
+      perror(NULL);
+      exit(errno);
+    }
+
+
     fgets(buffer, 255, fp);
     sscanf(buffer, "cpu  %llu %llu %llu %llu %llu %llu %llu %llu",
             &prevusertime, &prevnicetime, &prevSystemTime, &previdletime,
@@ -71,7 +83,7 @@ int main(int argc, char *argv[])
     fclose(fp);
 
     while (1) {
-        sleep(2);
+        // sleep(2);
         fp = fopen("/proc/stat", "r");
         fgets(buffer, 255, fp);
         sscanf(buffer, "cpu  %llu %llu %llu %llu %llu %llu %llu %llu",
@@ -95,14 +107,24 @@ int main(int argc, char *argv[])
         prevSystemAllTime = systemAllTime;
         prevTotalTime = totaltime;
 
-        printf("%s\n", buffer);
-        printf("nicetime %d usertime %d systemtime %d\n",
-                nicetime, usertime, systemtime);
-        printf("nicePeriod %d userPeriod %d systemAllPeriod %d\n",
-                nicePeriod, userPeriod, systemAllPeriod);
+        /* printf("%s\n", buffer); */
+        /* printf("nicetime %d usertime %d systemtime %d\n", */
+        /*         nicetime, usertime, systemtime); */
+        /* printf("nicePeriod %d userPeriod %d systemAllPeriod %d\n", */
+        /*         nicePeriod, userPeriod, systemAllPeriod); */
         // CPUMeter.c
         double cpu = MIN(100.0, MAX(0.0, ((nicePeriod + userPeriod + systemAllPeriod) / totalPeriod * 100.0)));
         printf("%f\n", cpu);
+
+	speed = ((100-cpu) * .60)+130; /* hackery: force range to 130-190, and slow is fast!! */
+    
+	/* ioctl to control the motor... */
+	if (ioctl(fdM1, MC_IOC_FWD, speed ) < 0){
+	  perror("ioctl error");
+	  exit(errno);
+	}
+
+	
         fclose(fp);
     }
 }
