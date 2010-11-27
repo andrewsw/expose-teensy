@@ -24,7 +24,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  *  02110-1301 USA.
  *
- */#ifndef __SUBMODULES_H__
+ */
+#ifndef __SUBMODULES_H__
 #define __SUBMODULES_H__
 
 /*** submodules: EDIT HERE TO ADD SUBMODULE ***/
@@ -34,8 +35,6 @@
    3. add the <your_submodule>.o to teensy_mono-objs in the Makefile
    (4. write code to run on the teensy and handle your request ...)
 */
-/* NC: I couldn't figure out how to have these in submodule.h (it's
-   included in multiple places), so i moved the defs here */
 #include "teensy_adc.h"
 #include "teensy_mc.h"
 static int  (*inits[])(void) __attribute__((unused)) = {
