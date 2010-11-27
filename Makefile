@@ -2,7 +2,7 @@
 # general project wide makefile
 #
 
-TRGTS = DRIVER userland_mc teensy_usb_hw/example.hex
+TRGTS = DRIVER userland_mc teensy_usb_hw/example.hex user_test
 SYNTAX_TRGTS = DRIVER
 TEST_TRGTS = 
 
@@ -22,6 +22,9 @@ DRIVER:
 	cd ./usb_driver; $(MAKE) $(CMD)
 
 userland_mc: userland_mc.c
+	$(CC) -g $< -o $@
+
+user_test: user_test.c
 	$(CC) -g $< -o $@
 
 teensy_usb_hw/example.hex: teensy_usb_hw/example.c
