@@ -50,7 +50,7 @@ int main(int argc, char ** argv) {
 	const int MinAdc1 = 0x0100; /* experimental min from light sensor */
 	const int MaxAdc0 = 100;
 	const int MaxAdc1 = 0x03ff; /* experimental maxish */
-	const int MaxMSpeed = 200;
+	const int MaxMSpeed = 190;
 	const int MinMSpeed = 130;
 	int value, speed;
         int fdAdc0, fdM0, fdAdc1, fdM1;
