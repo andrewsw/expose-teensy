@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
         double cpu = MIN(100.0, MAX(0.0, ((nicePeriod + userPeriod + systemAllPeriod) / totalPeriod * 100.0)));
         printf("%f\n", cpu);
 
-	speed = (cpu * 60)+130; /* hackery: force range to 130-190 */
+	speed = ((1-cpu) * 60)+130; /* hackery: force range to 130-190, and slow is fast!! */
     
 	/* ioctl to control the motor... */
 	if (ioctl(fdM1, MC_IOC_FWD, speed ) < 0){
