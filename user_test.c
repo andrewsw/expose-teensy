@@ -57,7 +57,7 @@ int main(int argc, char ** argv) {
 	char adc_file1[] = "/dev/adc1"; 
 	char mc_file0[] = "/dev/mc0";
 	char mc_file1[] = "/dev/mc1";
-	char buf0[2], buf1[2];
+	uint8_t buf0[2], buf1[2];
 
         /* check args */
         if (argc != 1)
@@ -98,7 +98,7 @@ int main(int argc, char ** argv) {
 		/* write the corresponding speed to both mc */
 		DEBUG("buf[0]=%x, buf1[1]=%x\n",buf1[0], buf1[1]);
 		
-		value = (int) buf1[0] << 8 + (int) buf1[1];
+		value = (buf1[0] << 8) +  buf1[1];
 		DEBUG("mc=0, value=%x\n", value);
 		speed = ((float)value-MinAdc1)/(MaxAdc1-MinAdc1)
 				*(MaxMSpeed-MinMSpeed) + MinMSpeed;
