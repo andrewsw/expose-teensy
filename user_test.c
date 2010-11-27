@@ -22,19 +22,19 @@ void usage(char * argv0) {
 }
 
 int main(int argc, char ** argv) {
-	/* constant limit values of ADCs and MC speed*/
+	/* constant limit values of ADCs and MC speed */
 	const int MinAdc0 = 0;
-/*	const int MinAdc1 = 0;*/
+	const int MinAdc1 = 0;
 	const int MaxAdc0 = 100;
-/*	const int MaxAdc1 = 100;*/
+	const int MaxAdc1 = 100;
 	const int MaxMSpeed = 250;
 	const int MinMSpeed = 0;
 	int value, speed;
-        int fdAdc0, fdM0 /*, fdAdc1, fdM1 */;
+        int fdAdc0, fdM0, fdAdc1, fdM1;
 	char adc_file0[] = "/dev/adc0";
-/*	char adc_file1[] = "/dev/adc1"; */
+	char adc_file1[] = "/dev/adc1"; 
 	char mc_file0[] = "/dev/mc0";
-/*	char mc_file1[] = "/dev/mc1";*/
+	char mc_file1[] = "/dev/mc1";
 	char buf0, buf1;
 
         /* check args */
@@ -74,39 +74,27 @@ int main(int argc, char ** argv) {
 /*		read(fdAdc1, buf1, 1);*/
 
 		/* write the corresponding speed to both mc */
-		if (sscanf(&buf0, "%i", &value) != 1) {
-			DEBUG("Error reading speed from ADC0\n");
+		value = (int) buf0;
+		DEBUG("mc=0, speed=%i\n", value);
+		speed = ((float)value-MinAdc0)/(MaxAdc0-MinAdc0)
+				*(MaxMSpeed-MinMSpeed) + MinMSpeed;
+		speed<MinMSpeed ? MinMSpeed : speed;
+		speed>MaxMSpeed ? MaxMSpeed : speed;
+		if (ioctl(fdM0, MC_IOC_FWD, speed ) < 0){
+			perror("ioctl error");
+			exit(errno);
 		}
-		else {
-			DEBUG("mc=0, speed=%i\n", value);
-			speed = (value-MinAdc0)/(MaxAdc0-MinAdc0)
-					*(MaxMSpeed-MinMSpeed) + MinMSpeed;
-			speed<MinMSpeed ? MinMSpeed : speed;
-			speed>MaxMSpeed ? MaxMSpeed : speed;
-			if (ioctl(fdM0, 
-				MC_IOC_FWD,
-				speed ) < 0){
-				perror("ioctl error");
-				exit(errno);
-			}
-		}
-/*		if (sscanf(buf1, "%d", &speed) != 1) {
-			DEBUG("Error reading speed from ADC1\n");
-		}
-		else {
-			DEBUG("mc=1, speed=%i\n", value);
-			speed = (value-MinAdc1)/(MaxAdc1-MinAdc1)
-					*(MaxMSpeed-MinMSpeed) + MinMSpeed;
-			speed<MinMSpeed ? MinMSpeed : speed;
-			speed>MaxMSpeed ? MaxMSpeed : speed;
-			if (ioctl(fdM1, 
-				MC_IOC_FWD, 
-				speed ) < 0 {
-				perror("ioctl error");
-				exit(errno);
-			}
-		}
-*/
+/*		value = (int) buf1;
+		DEBUG("mc=1, speed=%i\n", value);
+		speed = ((float)value-MinAdc1)/(MaxAdc1-MinAdc1)
+				*(MaxMSpeed-MinMSpeed) + MinMSpeed;
+		speed<MinMSpeed ? MinMSpeed : speed;
+		speed>MaxMSpeed ? MaxMSpeed : speed;
+		if (ioctl(fdM1, MC_IOC_FWD, speed ) < 0) {
+			perror("ioctl error");
+			exit(errno);
+		}*/
+
 		/* put the program to sleep to avoid sending to much data */
 		sleep(1);
 	}
