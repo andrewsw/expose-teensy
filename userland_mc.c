@@ -23,7 +23,7 @@
  *  02110-1301 USA.
  *
  */
- */
+
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
