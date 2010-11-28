@@ -11,3 +11,7 @@ with kernel-submodules in kernel land and handler dispatch in hw land;
 initial pack/unpack architecture/implementation in kernel/hw land;
 skeletal adc/mc submodule implementation, including kernel land
 drivers and hw land handlers; userland mc control app implementation.
+
+Jim Larson <jlarson@pacifier.com>: -- Code to interface Teensy to our hardware,
+hardware design for the H-Bridge, LED hook-up. 
+
