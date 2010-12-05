@@ -1,0 +1,7 @@
+Teensy HW and SW Test Procedure
+Jim Larson 12/4/2010
+Copyright © James Larson 2010
+
+The TeensyHW2USB firmware and the attendant Linux driver were both developed iteratively from working code. As such, we made sure that things worked at each stage and did many small tests rather than needing a test procedure for a large section of code. 
+
+This approach worked very satisfactorily for this project.
