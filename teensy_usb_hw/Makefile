@@ -43,7 +43,7 @@
 
 
 # Target file name (without extension).
-TARGET = example
+TARGET = teensyHW2USB
 
 
 # List C source files here. (C dependencies are automatically generated.)
