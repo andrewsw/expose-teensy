@@ -34,7 +34,7 @@
 #include <errno.h>
 #include <stdint.h>
 
-#include "usb_driver/teensy_mc.h"
+#include "teensy_mc.h"
 
 #define DEBUG(x...)  fprintf(stderr, x) 
 

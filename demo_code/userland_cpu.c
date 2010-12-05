@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include "usb_driver/teensy_mc.h"
+#include "teensy_mc.h"
 
 #define String_startsWith(s, match) (strstr((s), (match)) == (s))
 #define MIN(a,b) ((a)<(b)?(a):(b))

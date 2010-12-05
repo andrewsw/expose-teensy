@@ -2,8 +2,8 @@
 # general project wide makefile
 #
 
-TRGTS = DRIVER userland_mc teensy_usb_hw/example.hex user_test profiling
-SYNTAX_TRGTS = DRIVER
+TRGTS = DRIVER DEMO_CODE teensy_usb_hw/teensyHW2USB.hex
+SYNTAX_TRGTS = DRIVER DEMO_CODE
 TEST_TRGTS = 
 
 all: CMD = all
@@ -21,21 +21,15 @@ test: $(TEST_TRGTS)
 DRIVER:
 	cd ./usb_driver; $(MAKE) $(CMD)
 
-userland_mc: userland_mc.c
-	$(CC) -g $< -o $@
+DEMO_CODE:
+	cd ./demo_code; $(MAKE) $(CMD)
 
-user_test: user_test.c
-	$(CC) -g $< -o $@
-
-profiling: profiling.c
-	$(CC) -g $< -o $@
-
-teensy_usb_hw/example.hex: teensy_usb_hw/example.c
-	cd teensy_usb_hw && make
+teensy_usb_hw/teensyHW2USB.hex: teensy_usb_hw/teensyHW2USB.c
+	cd teensy_usb_hw/; make
 
 # you are NOT expected to compile teensy_loader_cli; use the precompiled version
 load-hw: teensy_usb_hw/example.hex
-	teensy_loader/teensy_loader_cli -mmcu=atmega32u4 -w -v teensy_usb_hw/example.hex
+	teensy_loader/teensy_loader_cli -mmcu=atmega32u4 -w -v teensy_usb_hw/teensyHW2USB.hex
 
 load:
 	insmod usb_driver/teensy_mono.ko

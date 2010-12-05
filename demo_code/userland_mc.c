@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "usb_driver/teensy_mc.h"
+#include "teensy_mc.h"
 
 #define DEBUG(x...) /* fprintf(stderr, x) */
 
