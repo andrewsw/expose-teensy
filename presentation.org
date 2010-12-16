@@ -1,0 +1,55 @@
+1. problem statement/goal
+
+   - make it easy to create teensy based applications
+
+   - device creators want to
+     - write some kernel land code
+     - write some hw land code
+     - but not worry about how they're connected
+
+   - application creators want to
+     - connect with /dev devs
+     - connect wires to teensy
+
+2. architecture as solution
+   - kernel land kernel modules
+   - hw land handlers
+   - comm system that marshals data over usb
+
+   show the code to drive this home:
+
+   : static int  (*inits[])(void) = {
+   :         adc_init,
+   :         mc_init,
+   : };
+   : static void (*exits[])(void) = {
+   :         adc_exit,
+   :         mc_exit,
+   : };
+
+   : switch(msg.destination){
+   :     case 'a':
+   :             handle_adc(msg);
+   :         break;
+   :     case 'm':
+   :             handle_mc(msg);
+   :             break;
+
+3. example submodules
+   - adc
+   - mc
+
+4. mc hardware
+   - schematic and photo of implementation
+
+5. submodules demo
+   - =head -c 100 /dev/adc0 | od -x=
+   - =userland_mc= to turn cars on and off
+
+6. example applications
+   - system load
+   - light sensor
+
+7. applications demo
+   - change system load and watch car speed change
+   - change light and watch cars move
